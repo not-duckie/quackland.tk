@@ -54,3 +54,4 @@ textend="</body>
 "
 echo -n "$text$(cat $1.html)" > $1.html
 echo -n "$textend" >> $1.html
+rm $1.md
