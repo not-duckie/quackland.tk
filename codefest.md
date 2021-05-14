@@ -1,5 +1,4 @@
 # WriteUp for CodeFest
-###### tags: `pwn` `ctf` `easy` `beginner`
 
 These will include the challenges I was able to do in the last 2 hours of the 24 hour ctf @ CodeFest 2021. I was able to solve the entire pwn category which was easy and beginner friendly and one forensics challenge which was very practical and straight-forward.
 
@@ -13,7 +12,7 @@ This was the first challenge which has stack overflow vulnerability and the goal
 
 Let's start by analyzing the function in radare2.
 
-```auto
+```
 r2 -R'stdin=input.txt' ./source_fixed.
 ```
 
@@ -25,7 +24,7 @@ So our target is to go to the `sym.print_flag` as it will get us the flag. So ho
 
 The function seems simple: we overflow the buffer s (i.e rbp-0x20 \[check top of the function\]). So after we give 0x20 bytes we will get to rbp and then rip. Thus our exploit will look like this:-
 
-```python
+```
 from pwn import *
 
 
@@ -54,7 +53,7 @@ This challenge is format string vulnerability in which we will have to overwrite
 
 start by analyzing the function:-
 
-```auto
+```bash
 r2 -R'stdin=input.txt' ./format
 ```
 
@@ -69,7 +68,8 @@ The vulnerability as hinted by the binary name and the confirmed from the source
 %n basically write the number of bytes printed to screen so far to a given address.
 
 Let's start by determining where our first argument lands on the stack. Send the input
-```
+
+```bash
 aaaabbbbcccc%lx %lx...
 ```
 repeat the %lx until you see the aaaa in hex.
@@ -84,7 +84,7 @@ Now all we need to overwrite the cmp to pass it and get the flag shown we found 
 
 The exploit basically writes a number to a given address that is 0x804c044. It takes some hit and trial to find the correct value to write but start with int(0xcafe) and adjust accordingly.
 
-```python=
+```python
 from pwn import *
 
 padding = b'i'*88
@@ -109,7 +109,7 @@ Welcome the pawry is a simple rop challenge. We get a buffer overflow, string in
 
 The challenge is straightforward so the exploit should be self explanatory.
 
-```python=
+```python
 from pwn import *
 
 
@@ -128,7 +128,6 @@ p = process('./pawry')
 p.recvuntil('.')
 p.sendline(payload)
 p.interactive()
-
 ```
 
 # Forensics
@@ -153,7 +152,7 @@ dd if=anime.jpg of=tmp bs=1 skip=362196
 Here skip the address of the line where we found the ending byte in int (0x586D4).
 
 ###### Note
-```=
+```bash
 i am using ghex and my hex editor.
 ```
 
@@ -163,7 +162,7 @@ After cleaning up the file by removing extra bytes that may have been copied and
 
 When we try to open it we find it has a password protection. So convert it to hash and brute force it with john.
 
-```bash=
+```bash
 zip2john tmp.zip > hash
 john --wordlist=~/rockyou.txt hash
 ```
@@ -172,12 +171,12 @@ We find the password as dragonballz. But the picture was of naruto ? wtf.
 
 The flag.txt is a pdf file which when opened with the viewer opens weird. So lets repair it with foremost and try it again.
 
-```=
+```bash
 foremost flag.txt
 ```
 Now when it opens it, it asks for a password.
 
-```
+```bash
 pdf2john 00000.pdf > hash
 john --wordlist=~/rockyou.txt hash
 ```
