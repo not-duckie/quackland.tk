@@ -27,7 +27,6 @@ The function seems simple: we overflow the buffer s (i.e rbp-0x20 \[check top of
 ```
 from pwn import *
 
-
 padding = b'i'*0x20
 flag = p64(0x4011b6)
 
@@ -151,7 +150,8 @@ dd if=anime.jpg of=tmp bs=1 skip=362196
 
 Here skip the address of the line where we found the ending byte in int (0x586D4).
 
-###### Note
+### Note
+
 ```bash
 i am using ghex and my hex editor.
 ```
