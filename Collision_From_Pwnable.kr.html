@@ -1,0 +1,204 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="collision-from-pwnable.kr">Collision From Pwnable.kr</h1>
+<h4 id="category-toddlers-bottle">Category : Toddler’s Bottle</h4>
+<p>The second challenge from the binary exploitation series that I’ll be posting. This challenge is Collision and is supposed to be loosely based around the hash collision concept.</p>
+<p>Let’s start with the challenge prompt. The challenge prompt talks about the md5 hash collision and we get the login credentials for the server.</p>
+<p><img src="https://i.imgur.com/jOJ3Q85.png" /></p>
+<p>Login into the server and copy all the files to your box to analyse them further.</p>
+<pre><code>scp -P 2222 col@pwnable.kr:/home/col/col* .</code></pre>
+<h2 id="dry-run">Dry Run</h2>
+<p>Run the binary to see what it does and how should we start to exploit it.</p>
+<pre><code>./col
+usage : ./col [passcode]</code></pre>
+<p>It asks for a passcode. So let’s give it something.</p>
+<pre><code>./col password
+passcode length should be 20 bytes</code></pre>
+<p>Now it gives a requirement for the password. It should be of 20 bytes. So let’s give it that.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./col</span> <span class="kw">`</span><span class="ex">python</span> <span class="at">-c</span> <span class="st">&#39;print (&quot;A&quot;*20)&#39;</span><span class="kw">`</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">wrong</span> passcode.</span></code></pre></div>
+<p>so we now have a basic idea what the binary does.</p>
+<h2 id="hash-collision">Hash Collision</h2>
+<p>A hash collision occurs when two strings produce the same hash. MD5 hash is the fastest and smallest hashing algorithm (16 bytes). The hash collision probability of md5 (1.47x10<sup>-29</sup>) is quite high when compared to sha1 or sha256 hashing algorithm.</p>
+<h2 id="understanding-the-source-code">Understanding the source code</h2>
+<p>Lets analyze the col.c file to understand what the code is exactly doing with our input.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;string.h&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="dt">unsigned</span> <span class="dt">long</span> hashcode <span class="op">=</span> <span class="bn">0x21DD09EC</span><span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="dt">unsigned</span> <span class="dt">long</span> check_password<span class="op">(</span><span class="dt">const</span> <span class="dt">char</span><span class="op">*</span> p<span class="op">){</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> ip <span class="op">=</span> <span class="op">(</span><span class="dt">int</span><span class="op">*)</span>p<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> i<span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> res<span class="op">=</span><span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(</span>i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="dv">5</span><span class="op">;</span> i<span class="op">++){</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        res <span class="op">+=</span> ip<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>   </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> res<span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[]){</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>argc<span class="op">&lt;</span><span class="dv">2</span><span class="op">){</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        printf<span class="op">(</span><span class="st">&quot;usage : %s [passcode]</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span> argv<span class="op">[</span><span class="dv">0</span><span class="op">]);</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>   </span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>strlen<span class="op">(</span>argv<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">!=</span> <span class="dv">20</span><span class="op">){</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        printf<span class="op">(</span><span class="st">&quot;passcode length should be 20 bytes</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>   </span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>hashcode <span class="op">==</span> check_password<span class="op">(</span> argv<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">)){</span> </span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        system<span class="op">(</span><span class="st">&quot;/bin/cat flag&quot;</span><span class="op">);</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>   </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        printf<span class="op">(</span><span class="st">&quot;wrong passcode.</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>It looks like there are 2 checks on the given input. 1. If the length is 20 bytes 2. If the check_password(argv[1]) returns a value equal to the hashcode variable.</p>
+<p>On passing the 2nd condition the code prints the flag thus the function we need to exploit is the check_password function.</p>
+<p>On looking at the code it does a pointer conversion from char* to int*. Then it iterates over the ip pointer and adds all the values to res var.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="dt">unsigned</span> <span class="dt">long</span> hashcode <span class="op">=</span> <span class="bn">0x21DD09EC</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="dt">unsigned</span> <span class="dt">long</span> check_password<span class="op">(</span><span class="dt">const</span> <span class="dt">char</span><span class="op">*</span> p<span class="op">){</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> ip <span class="op">=</span> <span class="op">(</span><span class="dt">int</span><span class="op">*)</span>p<span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> i<span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> res<span class="op">=</span><span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(</span>i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span><span class="dv">5</span><span class="op">;</span> i<span class="op">++){</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        res <span class="op">+=</span> ip<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span>   </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> res<span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>At first glance it looks a little confusing but we will walk through it step by step. The pointer <strong>p</strong> is of type char* thus it will behave like a string (a string that contains our input). so when we do</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span><span class="op">*</span> ip <span class="op">=</span> <span class="op">(</span><span class="dt">int</span><span class="op">*)</span> p<span class="op">;</span></span></code></pre></div>
+<p>Basically what happens is the base address of the p is stored into the ip pointer and it is told to the C compiler that it is an int now. So the 20 byte input is now converted to int values and stored in 5 blocks of 4 bytes (as int has 4 byte size).</p>
+<p>Let’s write a simple C code to understand it better. In the code below i am doing the same thing as challenge code but printing out the value that the pointer is pointing to.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include</span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include</span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[]){</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>argc <span class="op">&lt;</span> <span class="dv">2</span><span class="op">){</span> printf<span class="op">(</span><span class="st">&quot;Usage %s [something]</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span>argv<span class="op">[</span><span class="dv">0</span><span class="op">]);</span> exit<span class="op">(</span><span class="dv">0</span><span class="op">);</span> <span class="op">}</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> p <span class="op">=</span> <span class="op">(</span><span class="dt">int</span><span class="op">*)</span> argv<span class="op">[</span><span class="dv">1</span><span class="op">];</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">&quot;%p</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,*</span>p<span class="op">);</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>we get the following output.</p>
+<pre><code>./a.out password
+0x73736170</code></pre>
+<p>This is actually the memory hex representation of the <strong>“pass”</strong> i.e first 4 bytes of the input string. Cross check it with a python interpreter.</p>
+<p><img src="https://i.imgur.com/ZaitrnJ.png" /></p>
+<p>Since the pointer p points to the base of memory where the string (our input) is stored. We can actually iterate over it to have all the values !</p>
+<p>Modify our test C code more.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include</span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include</span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[]){</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>argc <span class="op">&lt;</span> <span class="dv">2</span><span class="op">){</span> printf<span class="op">(</span><span class="st">&quot;Usage %s [something]</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span>argv<span class="op">[</span><span class="dv">0</span><span class="op">]);</span> exit<span class="op">(</span><span class="dv">0</span><span class="op">);</span> <span class="op">}</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span><span class="op">*</span> p <span class="op">=</span> <span class="op">(</span><span class="dt">int</span><span class="op">*)</span> argv<span class="op">[</span><span class="dv">1</span><span class="op">];</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span>i<span class="op">&lt;(</span><span class="kw">sizeof</span><span class="op">(</span>argv<span class="op">[</span><span class="dv">1</span><span class="op">])/</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">char</span><span class="op">))/</span><span class="dv">4</span><span class="op">;</span>i<span class="op">++){</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>            printf<span class="op">(</span><span class="st">&quot;%p</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span>p<span class="op">[</span>i<span class="op">]);</span> <span class="op">}</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Run it and we get the following output. Which is as expected 2 blocks of 4 byte.</p>
+<pre><code>./a.out password
+0x73736170
+0x64726f77</code></pre>
+<p>decode it with a python interpreter.</p>
+<p><img src="https://i.imgur.com/mnK6DWF.png" /></p>
+<p>I know, I know. Playing with memory in C is awesome.</p>
+<h1 id="exploitation">Exploitation</h1>
+<p>Now we know what is actually happening, let’s exploit it. So the basic idea is the sum of res i.e returned by the function should be equal to var hashcode. If the check is true the flag is outputted.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">unsigned</span> <span class="dt">long</span> hashcode <span class="op">=</span> <span class="bn">0x21DD09EC</span><span class="op">;</span></span></code></pre></div>
+<p>the value of hashcode is 568134124 in decimal converted with python.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bn">0x21DD09EC</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="dv">568134124</span></span></code></pre></div>
+<p>Now we need to break it into 5 parts so that they add up to the hashcode and pass the check.</p>
+<p>The first mistake that I made is dividing it by 4 and adding 0 as the last part. Nah, it doesn’t work like that as we want it to be interpreted by the memory and 0 as hex memory (32 bit) is <strong>b’’</strong>. “” is a null byte and denotes the end of string in C thus it will fuckup your payload.</p>
+<p>So let’s do some math. What I did is hacky and a better approach can be taken here.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>target <span class="op">=</span> <span class="bn">0x21DD09EC</span> <span class="op">;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>i<span class="op">.</span>e <span class="dv">568134124</span> in decimal</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>so target <span class="op">/</span> <span class="dv">5</span> <span class="op">=&gt;</span> <span class="fl">113626824.8</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>and target <span class="op">%</span> <span class="dv">5</span> <span class="op">=&gt;</span> <span class="dv">4</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>so <span class="cf">if</span> we </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>target <span class="op">-</span> <span class="op">(</span><span class="dv">113626824</span> <span class="op">+</span> <span class="dv">4</span><span class="op">)</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>remaining value should be divisible with <span class="fl">4.</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>thus </span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>target <span class="op">=</span> <span class="op">(</span>target <span class="op">-</span> <span class="op">(</span><span class="dv">113626824</span> <span class="op">+</span> <span class="dv">4</span><span class="op">))*</span><span class="dv">4</span> <span class="op">+</span> <span class="op">(</span><span class="dv">113626824</span><span class="op">+</span><span class="dv">4</span><span class="op">)</span></span></code></pre></div>
+<p>So now lets write our exploit code in python3 and with help of pwntool.</p>
+<h4 id="note">Note:</h4>
+<p>Install pwntools with command.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install pwntools</span></code></pre></div>
+<p>The exploit will look like as follows:-</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pwn <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> p32(<span class="dv">113626824</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> p32(<span class="dv">113626828</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>payload <span class="op">=</span> a<span class="op">*</span><span class="dv">4</span> <span class="op">+</span> b </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span> (payload)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> process([<span class="st">&#39;./col&#39;</span>,payload])</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>p.interactive()</span></code></pre></div>
+<p>Run it locally to test it out and we get the contents of the dummy flag that we had created. Great ! The exploit works now lets run it on the server.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> python exploit.py</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">b</span><span class="st">&#39;\xc8\xce\xc5\x06\xc8\xce\xc5\x06\xc8\xce\xc5\x06\xc8\xce\xc5\x06\xcc\xce\xc5\x06&#39;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ex">[+]</span> Starting local process <span class="st">&#39;./col&#39;</span>: pid 15003</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="ex">[*]</span> Switching to interactive mode</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ex">this</span> works bruh</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="ex">[*]</span> Process <span class="st">&#39;./col&#39;</span> stopped with exit code 0 <span class="er">(</span><span class="ex">pid</span> 15003<span class="kw">)</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="ex">[*]</span> Got EOF while reading in interactive</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> </span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="ex">[*]</span> Got EOF while sending in interactive</span></code></pre></div>
+<p>Copy the string output by the script and run it as follows.</p>
+<p><img src="https://i.imgur.com/eW1pFl9.png" /></p></body>
+</html>

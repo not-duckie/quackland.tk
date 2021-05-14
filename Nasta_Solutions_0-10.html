@@ -1,0 +1,161 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="nasta-solutions-0-10">Nasta Solutions 0-10</h1>
+<h2 id="natas-0">Natas 0</h2>
+<p>The level is really simple, the prompt say that you can find the password on this page. If you right click to view the page source you can find the password there. This can also be achieved through pressing <em>Ctrl+U</em>, handy shortcut.</p>
+<p>One can also go full hackerman and do inspect elment to view the source in order to retrive the password.</p>
+<h2 id="natas1">Natas1</h2>
+<p>This level is similar to natas level 0, in this the makes have disabled the right click fucntionality. ### Intended Solution 1. The intended solution is to use shortcut <em>Ctrl+U</em> or use developer’s tools with shortcut <em>Ctrl+Shift+i</em> to view the source. 1. You could also use the python script similar to one used in first challange.</p>
+<h3 id="unintended-solution">Unintended Solution</h3>
+<p>But Due to poor of the implementation the disable right click feature only works if you right click inside the white box. One can <em>Right-Click</em> anywhere outside the white box to view the page source.</p>
+<h2 id="natas2">Natas2</h2>
+<p>The prompt on the page says</p>
+<p><code>There is nothing on this page</code></p>
+<p>On viewing the source of the page you see there is a image inlcuded in the source as <em>files/pixel.png</em></p>
+<p>lets examine the <em>files</em> folder in the source. To open the folder we append the url as:-</p>
+<p>http://natas2.natas.labs.overthewire.org/files/</p>
+<p>Nice! we see the user.txt, opening which gives us the password for the level 3</p>
+<h2 id="natas3">Natas3</h2>
+<p>Inside the page source you will find a comment that will say:</p>
+<p><code>&lt;!-- No more information leaks!! Not even Google will find it this time... --&gt;</code></p>
+<p>Since it hinted towards not even google finding it, so i thought about robots.txt file that is used to keep search engines out.</p>
+<p>Thus going to <strong>http://natas3.natas.labs.overthewire.org/robots.txt</strong> shows us a disallowed entry.</p>
+<pre><code>User-agent: *
+Disallow: /s3cr3t/</code></pre>
+<p>Going to that directory gives us our password for the next challenge.</p>
+<h2 id="natas-4">Natas 4</h2>
+<p>The prompt here says *Access disallowed. You are visiting from</p>
+<pre><code> while authorized users should come only from 
+
+&quot;http://natas5.natas.labs.overthewire.org/&quot;*</code></pre>
+<p>This means all we have to do in order to gain access is add a header to the request. It can be achieved by capturing the request with burpe and editing the header or we can use the python script.</p>
+<p>So capture the request in BurpSuite and edit the <strong>Referer</strong> header in the proxy tab and send the request.</p>
+<figure>
+<img src="https://github.com/not-duckie/natas_solutions/raw/master/images/image.png" alt="burpe" /><figcaption aria-hidden="true">burpe</figcaption>
+</figure>
+<p>I have written a python script for it. You can take a look it <a href="https://github.com/not-duckie/natas_solutions/blob/master/natas4/natas4.py">here</a></p>
+<h2 id="natas-5">Natas 5</h2>
+<p>We get a prompt that says <em>Access disallowed. You are not logged in</em>, to further investigate we could either user burpe to intercept the request and analyze it but we are using python for all the solutions so we inspect element to see the sent out requests and then a write suitable python requests. 1. Press <em>Ctrl+Shift+i</em> to open developer tools and click on <em>Networking</em> tab and then click on <em>ALL</em> (exactly below the network tab) to see all the requests. 1. Click on the request to select the GET request and then on right side click on <em>headers</em> tab. 1. On analyzing the headers we see a weird set-cookie <em>loggedin=0</em>, the set-cookie is the header in the response tag saying to set the cookie to this so the server could identify us as not logged in. 1. But we are hackerman :P we will do somewhat opposite of that, we will add that cookie but set it value to 1 or any other number other than zero</p>
+<p>I have written a python script for <a href="https://github.com/not-duckie/natas_solutions/blob/master/natas5/natas5.py">it</a> .</p>
+<h2 id="natas-6">Natas 6</h2>
+<p>The Page has a <em>Input secret</em> field, we see the source code for the form enumerations,</p>
+<pre><code>&lt;?
+include &quot;includes/secret.inc&quot;;
+    if(array_key_exists(&quot;submit&quot;, $_POST)) {
+        if($secret == $_POST[&#39;secret&#39;]) {
+        print &quot;Access granted. The password for natas7 is &lt;censored&gt;&quot;;
+    } else {
+        print &quot;Wrong secret&quot;;
+    }
+    }
+?&gt;</code></pre>
+<p>It takes the value of variable secret via a POST request i.e *$_POST[‘secret’])* and prints the password for the next level if it matches the variale $secret.</p>
+<p>So we go to <em>include/secret.inc</em> to see what is the value of variable <em>$secret</em>. When we open the <em>http://natas6.natas.labs.overthewire.org/includes/secret.inc</em> page we see blank page, so we press <em>Ctrl+U</em> to view the page source and we see the value of $secret i.e <strong>FOEIUWGHFEEUHOFUOIU</strong>.</p>
+<p>So we enter the value and get the password for the next level.</p>
+<h2 id="natas-7">Natas 7</h2>
+<p>When you see the webpage there nothinh on the page except <em>Home</em> and <em>About</em>, on click them them nothing happens, but if you see it carefully you observe that the url changes a bit. ### URL A Uniform Resource Locator, colloquially termed a web address, is a reference to a web resource that specifies its location on a computer network and a mechanism for retrieving it.*</p>
+<p><img src="https://proxy.duckduckgo.com/iu/?u=https%3A%2F%2Fqph.fs.quoracdn.net%2Fmain-qimg-942ef9fd07d745fbc4f692c83e2ef496&amp;f=1" alt="url-parts" />.</p>
+<p>Arguments can be passed to the webpage with the help of <strong>?</strong> parameter. Here in the challenge we see that the url <em>http://natas7.natas.labs.overthewire.org/index.php?page=home</em> is showing whatever the is being passed as t argument to the <em>page</em> parameter to the url. If not implemented properly this is know as <em>LFI (Local File Inclucsion)</em> vulnerability.</p>
+<p>So we give it a go and try to print the contents of /etc/passwd to confirm the vlun. we edit the url to be, <em>http://natas7.natas.labs.overthewire.org/index.php?page=/etc/passwd</em>.</p>
+<figure>
+<img src="https://github.com/not-duckie/natas_solutions/raw/master/natas7/images/1.png" alt="1.png" /><figcaption aria-hidden="true">1.png</figcaption>
+</figure>
+<p>we get the contents of the /etc/passwd, it is vlunerable LFI. On examining the source we see that the password is stored in the path <em>/etc/natas_webpass/nata8</em>, thus we append the url and get our passwd,</p>
+<pre><code>http://natas7.natas.labs.overthewire.org/index.php?page=/etc/natas_webpass/natas8</code></pre>
+<h2 id="natas-8">Natas 8</h2>
+<p>In this level similar to previous level we get to enter a password which will be checked by the server and on the basis of which it will permit the entry. When we view the source code we get:</p>
+<pre><code>&lt;?
+
+$encodedSecret = &quot;3d3d516343746d4d6d6c315669563362&quot;;
+
+function encodeSecret($secret) {
+    return bin2hex(strrev(base64_encode($secret)));
+}
+
+if(array_key_exists(&quot;submit&quot;, $_POST)) {
+    if(encodeSecret($_POST[&#39;secret&#39;]) == $encodedSecret) {
+    print &quot;Access granted. The password for natas9 is &lt;censored&gt;&quot;;
+    } else {
+    print &quot;Wrong secret&quot;;
+    }
+}
+?&gt;</code></pre>
+<p>The php code takes the user submitted string encode it, and if it matches the *<span class="math inline">$enocdedSecret* , we will get the password for next level. So lets decode the **\$enocdedSecret**, we will do exactly the reverse of ``` bin2hex(strrev(base64_encode($</span>secret)))</p>
+<pre><code>
+I&#39;ll will use php to decode it in order to solve this. we will be doing exact reverse of the mentioned function in php
+</code></pre>
+<?php
+$nice = '3d3d516343746d4d6d6c315669563362';
+echo base64_encode(strrev(hex2bin('$nice')));
+?>
+<pre><code>## Natas 9 
+The natas9 level starts with a prompt saying *Find words containing:* on examing the source code:</code></pre>
+<p>&lt;? $key = "";</p>
+<p>if(array_key_exists(“needle”, $_REQUEST)) { $key = $_REQUEST[“needle”]; }</p>
+<p>if($key != "“) { passthru(”grep -i $key dictionary.txt"); } ?&gt;</p>
+<pre><code>
+we see that its basically doing a grep command in bash to get all the words from a file called *dictionary.txt*.
+All we have to do is make it print contents of */etc/natas_webpass/natas10* to get to next level. we can use some regular expressions to solve it. I used the following command to solve it:</code></pre>
+<p>“^” /etc/natas_webpass/natas10 #</p>
+<pre><code>
+Here we are injecting user controlled variable and essentially making the resulting command to be:</code></pre>
+<p>grep -i “^” /etc/natas_webpass/natas10 #dictionary.txt</p>
+<pre><code>1. \# -&gt; this in bash in is comment
+1. ^ -&gt; this is regex and meaning any word or string that starts, essentially meaning all the words or strings.
+
+I have written a python script to do the essentially the same. You can find it [here](https://github.com/not-duckie/natas_solutions/blob/master/natas9/natas9.py)
+
+## Natas10
+Natas level 10 starts similar to the previous level, it prompts us with **Find words containing:** but we notice a new statement here **For security reasons, we now filter on certain characters**, lets view the source code:</code></pre>
+<p>&lt;? $key = "";</p>
+<p>if(array_key_exists(“needle”, $_REQUEST)) { $key = $_REQUEST[“needle”]; }</p>
+<p>if(<span class="math inline">$key != "") {  if(preg_match('/[;|&amp;]/',$</span>key)) { print “Input contains an illegal character!”; } else { passthru(“grep -i $key dictionary.txt”); } } ?&gt;</p>
+<pre><code>
+Now a new filter has been added, but the character we used in previous challenges are not being filter, so lets us try the same injection.
+</code></pre>
+<p>“^” /etc/natas_webpass/natas10 # ```</p>
+<p>we get the password, i guess there was a simpler solution of the previous challenge that we did’nt see.</p></body>
+</html>

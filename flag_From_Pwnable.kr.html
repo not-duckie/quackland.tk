@@ -48,25 +48,25 @@
 <p>The challenge flag was of reverse engineering category. Reverse Engineering is a handy skill to have while pwning binaries. The challenge gives only a binary and which mentions that it has allocated a malloc and saved the flag in that. So let’s start the challenge.</p>
 <p>Let’s read the prompt and download the important files to our box.</p>
 <p><img src="https://i.imgur.com/Z0b7GXK.png" /></p>
-<div class="sourceCode" id="cb1"><pre class="bash"><code class="bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> http://pwnable.kr/bin/flag</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> http://pwnable.kr/bin/flag</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x flag</span></code></pre></div>
 <h2 id="dry-run">Dry Run</h2>
 <p>Let’s give the binary a dry run and see what happens.</p>
-<div class="sourceCode" id="cb2"><pre class="bash"><code class="bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./flag</span></span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./flag</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">I</span> will malloc<span class="er">(</span><span class="kw">)</span> <span class="ex">and</span> strcpy the flag there. take it.</span></code></pre></div>
 <p>The binary says its has stored the contents of flag in the malloc that it created. So this should be easy, we open the binary in gdb and grab the contents that its strcpy to the malloc.</p>
-<div class="sourceCode" id="cb3"><pre class="bash"><code class="bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gdb</span> ./flag</span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gdb</span> ./flag</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span> fun</span></code></pre></div>
 <p><img src="https://i.imgur.com/q34PefX.png" /></p>
 <p>There are no functions or calls in the binary. This is weird. On first glance this weird behaviour is difficult to analyze.</p>
 <p>One of the reasons that the binary shows no function in the gdb could be it is packed with upx. The man page of upx states that:-</p>
-<div class="sourceCode" id="cb4"><pre class="bash"><code class="bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">UPX</span> is a portable, extendable, high-performance executable packer for several different executable formats. It achieves an excellent compression ratio and offers <span class="pp">*</span>very<span class="pp">*</span> fast decompression. Your executables suffer no memory overhead or other drawbacks for most of the formats supported, because of in-place decompression.</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">UPX</span> is a portable, extendable, high-performance executable packer for several different executable formats. It achieves an excellent compression ratio and offers <span class="pp">*</span>very<span class="pp">*</span> fast decompression. Your executables suffer no memory overhead or other drawbacks for most of the formats supported, because of in-place decompression.</span></code></pre></div>
 <h2 id="unpack-the-binary">Unpack the binary</h2>
 <p>Now let’s unpack the binary with upx and analyse it in the gdb again.</p>
-<div class="sourceCode" id="cb5"><pre class="bash"><code class="bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">upx</span> <span class="at">-d</span> flag <span class="at">-o</span> flag2</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">upx</span> <span class="at">-d</span> flag <span class="at">-o</span> flag2</span></code></pre></div>
 <p><img src="https://i.imgur.com/BKIhNz3.png" /></p>
 <p>Now when you open it in gdb and check for functions you’ll be able to see more data than earilier.</p>
-<div class="sourceCode" id="cb6"><pre class="bash"><code class="bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gdb</span> ./flag2</span>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gdb</span> ./flag2</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span> fun</span></code></pre></div>
 <p><img src="https://i.imgur.com/YkTJHEv.png" /></p>
 <p>That being said, now all we need to get the flag from the malloc.</p>
@@ -81,5 +81,5 @@
 <p>And we see the flag being passed to malloc occupied memory.</p>
 <p><img src="https://i.imgur.com/WlYCiHT.png" /></p>
 <p>Flag is:</p>
-<div class="sourceCode" id="cb7"><pre class="bash"><code class="bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">UPX...?</span> sounds like a delivery service :<span class="er">)</span></span></code></pre></div></body>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">UPX...?</span> sounds like a delivery service :<span class="er">)</span></span></code></pre></div></body>
 </html>

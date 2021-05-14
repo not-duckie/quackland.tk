@@ -1,0 +1,121 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="fd-from-pwnable.kr">fd from Pwnable.kr</h1>
+<h4 id="category-toddlers-bottle">Category : Toddler’s Bottle</h4>
+<p>This blog post will be part of the binary exploitation series. I am new to this kind of stuff and will be posting about them as I learn. In this series we will be hacking pwnable.kr challenges. I heard that is a great resource to learn from.</p>
+<h2 id="toddlers-bottle">Toddler’s Bottle</h2>
+<p>So the first category is Toddler’s Bottle. They are supposed to be easy beginner level binary exploitation challenges. Thus we will be starting from there.</p>
+<h3 id="fd">fd</h3>
+<p>The first challenge name is fd and it talks about Linux file descriptors in the challenge prompt.</p>
+<p><img src="https://i.imgur.com/TurHxBS.png" /></p>
+<p>Lets login into the server and check the binary. We ssh into the server with a password guest.</p>
+<pre><code>ssh -p2222 fd@pwnable.kr</code></pre>
+<p><img src="https://i.imgur.com/5h3VXiM.png" /></p>
+<p>There are 3 files fd, fd.c and the flag file. Copy the file to our box and begin the analysis.</p>
+<p>Note: for debugging create a file names flag in your directory as if our exploit works the program will read that file and we will know the exploit worked.</p>
+<p>I created a flag file with contents “this works bruh”.</p>
+<pre><code>scp -P 2222 fd@pwnable.kr:/home/fd/fd* .</code></pre>
+<p><img src="https://i.imgur.com/ukciy9h.png" /></p>
+<p>We run the fd binary and see, it asks for an argument.</p>
+<pre><code>./fd
+pass argv[1] a number</code></pre>
+<p>So we run it with a random number such 69 to see what happens.</p>
+<pre><code>./fd 69
+learn about Linux file IO</code></pre>
+<p>In Linux a file descriptor is an abstract indicator (handle) used to access a file or other input/output resource, such as a pipe or network socket. They go as follows:</p>
+<pre><code>0 -&gt; stdin
+1 -&gt; stdout
+2 -&gt; stderr</code></pre>
+<p>so lets now examine the source code that was given with the file.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;string.h&gt;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> buf<span class="op">[</span><span class="dv">32</span><span class="op">];</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[],</span> <span class="dt">char</span><span class="op">*</span> envp<span class="op">[]){</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>argc<span class="op">&lt;</span><span class="dv">2</span><span class="op">){</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        printf<span class="op">(</span><span class="st">&quot;pass argv[1] a number</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> fd <span class="op">=</span> atoi<span class="op">(</span> argv<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">)</span> <span class="op">-</span> <span class="bn">0x1234</span><span class="op">;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> len <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    len <span class="op">=</span> read<span class="op">(</span>fd<span class="op">,</span> buf<span class="op">,</span> <span class="dv">32</span><span class="op">);</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(!</span>strcmp<span class="op">(</span><span class="st">&quot;LETMEWIN</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span> buf<span class="op">)){</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        printf<span class="op">(</span><span class="st">&quot;good job :)</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        system<span class="op">(</span><span class="st">&quot;/bin/cat flag&quot;</span><span class="op">);</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        exit<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">&quot;learn about Linux file IO</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Here the noteworthy thing here is the read function used. The read function C takes 3 arguments normally.</p>
+<ul>
+<li>File Descriptor</li>
+<li>buffer</li>
+<li>Number of bytes to read</li>
+</ul>
+<p>Thus the use to read 32 bytes from the stdin into the buffer looks like.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>read<span class="op">(</span><span class="dv">0</span><span class="op">,</span>buff<span class="op">,</span><span class="dv">32</span><span class="op">);</span></span></code></pre></div>
+<p>Now to make binary output the flag and we need to pass the if statement.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span><span class="op">(!</span>strcmp<span class="op">(</span><span class="st">&quot;LETMEWIN</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span> buf<span class="op">)){</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        printf<span class="op">(</span><span class="st">&quot;good job :)</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        system<span class="op">(</span><span class="st">&quot;/bin/cat flag&quot;</span><span class="op">);</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        exit<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>For that the buf must contain the string <strong>“LETMEWIN”</strong>. Thus in order to exploit all we need to do is make the read() call the stdin and then enter the required string. Simple enough.</p>
+<p>Since we control the fd value that is passed to the read function, all we need to do is make that 0 in order to call the stdin.</p>
+<p>In code we that the argument passed via CLI is subtracted by 0x1234 then passed to fd.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> fd <span class="op">=</span> atoi<span class="op">(</span> argv<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">)</span> <span class="op">-</span> <span class="bn">0x1234</span><span class="op">;</span></span></code></pre></div>
+<p>0x1234 that is 4660 in decimal (can be converted with python interactive prompt as below.)</p>
+<p><img src="https://i.imgur.com/QsP4DsM.png" /></p>
+<p>Thus if we pass 4660 as argument, the fd gets the value zero and the program reads the stdin. So lets do it.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./fd</span> 4660</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">LETMEIN</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ex">good</span> job :<span class="er">)</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="ex">this</span> works bruh</span></code></pre></div>
+<p>The payload works and we get the contents of the dummy flag file that we created. Thus lets do this on the server now.</p>
+<p><img src="https://i.imgur.com/0h1aYHi.png" /></p></body>
+</html>

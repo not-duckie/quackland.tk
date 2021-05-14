@@ -1,0 +1,94 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="devel">DEVEL</h1>
+<p>The Devel box was also simple windows box in which we find FTP listening o port 21 which has anonymous login allowed that allows us to put file on the server. The ftp files were on hosted by web service IIS 7 port 80. We place a aspx shell through ftp get RCE then do privesc on windows 7 box with MS15-051.</p>
+<h2 id="nmap-scan">Nmap Scan</h2>
+<p>we will run a nmap scan to find all the open ports on the sever, to do run the following command.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">namp</span> <span class="at">-sC</span> <span class="at">-sV</span> <span class="at">-oN</span> nmap/devel 10.10.10.5</span></code></pre></div>
+<p>which get us the following output,</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Nmap 7.80 scan initiated Tue Mar 17 20:25:42 2020 as: nmap -sC -sV -oN nmap/devel 10.10.10.5</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">Nmap</span> scan report for 10.10.10.5</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">Host</span> is up <span class="er">(</span><span class="ex">0.35s</span> latency<span class="kw">)</span><span class="bu">.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">Not</span> shown: 998 filtered ports</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">PORT</span>   STATE SERVICE VERSION</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ex">21/tcp</span> open  ftp     Microsoft ftpd</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">ftp-anon:</span> Anonymous FTP login allowed <span class="er">(</span><span class="ex">FTP</span> code 230<span class="kw">)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">03-18-17</span>  01:06AM       <span class="op">&lt;</span>DIR<span class="op">&gt;</span>          aspnet_client</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">03-17-17</span>  04:37PM                  689 iisstart.htm</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span><span class="ex">_03-17-17</span>  04:37PM               184946 welcome.png</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">ftp-syst:</span> </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span><span class="ex">_</span>  SYST: Windows_NT</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="ex">80/tcp</span> open  http    Microsoft IIS httpd 7.5</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">http-methods:</span> </span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span><span class="ex">_</span>  Potentially risky methods: TRACE</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span><span class="ex">_http-server-header:</span> Microsoft-IIS/7.5</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span><span class="ex">_http-title:</span> IIS7</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="ex">Service</span> Info: OS: Windows<span class="kw">;</span> <span class="ex">CPE:</span> cpe:/o:microsoft:windows</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="ex">Service</span> detection performed. Please report any incorrect results at https://nmap.org/submit/ .</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Nmap done at Tue Mar 17 20:28:17 2020 -- 1 IP address (1 host up) scanned in 154.73 seconds</span></span></code></pre></div>
+<p>we see FTP and Web Server on port 80 is open. Since anonymous login is allowed on ftp lets start from there.</p>
+<h2 id="ftp">FTP</h2>
+<p>Using the ftp command, we login with username anonymous and password anything to view the files.</p>
+<figure>
+<img src="images/devel/ftp_anonymous.png" alt="ftp screenshot" /><figcaption aria-hidden="true">ftp screenshot</figcaption>
+</figure>
+<p>Since we have write permissions on the server, (can be test by uploading any file on it with <code>put</code> command), lets upload a aspx shell to get <strong>RCE</strong>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">put</span> shell.aspx</span></code></pre></div>
+<p>which gave us, the RCE as follows</p>
+<figure>
+<img src="https://github.com/not-duckie/hackthebox_writeups/raw/master/images/devel/RCE.png" alt="RCE gained" /><figcaption aria-hidden="true">RCE gained</figcaption>
+</figure>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<p>Upgraded the RCE to a full meterpreter shell with hat manual exploit. found this from systeminfo</p>
+<figure>
+<img src="https://github.com/not-duckie/hackthebox_writeups/raw/master/images/devel/systeminfo.png" alt="systeminfo" /><figcaption aria-hidden="true">systeminfo</figcaption>
+</figure>
+<p>Ran Sherlock.ps1 to find relevant exploits, found MS15-051 to be working to give root exploit. Used binary available from <a href="https://github.com/SecWiki/windows-kernel-exploits/tree/master/MS15-051">here</a> . Which gave us the system shell.</p>
+<figure>
+<img src="https://github.com/not-duckie/hackthebox_writeups/raw/master/images/devel/proof.png" alt="proof" /><figcaption aria-hidden="true">proof</figcaption>
+</figure></body>
+</html>

