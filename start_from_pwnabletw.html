@@ -49,7 +49,7 @@
 <p>That being said let’s get started.</p>
 <h2 id="analyzing-the-binary">Analyzing the binary</h2>
 <p>We can download the binary from the site and throw it in gdb to get a closer look.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>gdb .<span class="ot">/start</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode "><code class="sourceCode "><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>gdb .<span class="ot">/start</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ot">gef➤  info fun</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">All defined functions:</span></span>
@@ -68,7 +68,7 @@
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ss">Fortify                       : ✘</span></span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="ss">RelRO                         : ✘</span></span></code></pre></div>
 <p>The binary is small and has no main in it, I’d say it’s handcrafted for this challenge. Thus reversing it should be pretty easy. Let’s start with the <strong>_start</strong> function.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>gef➤  disas _start</span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode "><code class="sourceCode "><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>gef➤  disas _start</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Dump of assembler code <span class="kw">for</span> function _start:</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   <span class="bn">0x08048060</span> &lt;+<span class="dv">0</span>&gt;:     <span class="fu">push</span>   esp</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>   <span class="bn">0x08048061</span> &lt;+<span class="dv">1</span>&gt;:     <span class="fu">push</span>   <span class="bn">0x804809d</span></span>
@@ -105,7 +105,7 @@
 <li>then the read syscall with edx value of 0x3c (i.e 60).</li>
 </ol>
 <p>It seems like we have a buffer overflow vuln here. Lets try out by giving a really long string to find the offset.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>gef➤  pattern create <span class="dv">100</span></span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode "><code class="sourceCode "><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>gef➤  pattern create <span class="dv">100</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>[+] Generating a pattern of <span class="dv">100</span> <span class="kw">bytes</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>aaaabaaacaaadaaaeaaafaaagaaahaaaiaaajaaakaaalaaamaaanaaaoaaapaaaqaaaraaasaaataaauaaavaaawaaaxaaayaaa</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>[+] Saved as <span class="ot">&#39;</span><span class="ss">$_gef0</span><span class="ot">&#39;</span></span>
@@ -159,7 +159,7 @@
 <p>keeping that in mind the. We know that the first thing pushed on stack was esp. So after we have given our input (our given input will overwrite the stack in place of string “Let’s start the CTF:”) and popping of 20 bytes of data (with add esp,0x14) and the exit address in **_exit<strong>, we will have only esp on the stack. Thus if we will overwrite eip with a call to write syscall (present in binary) we can leak the address of </strong>esp**.</p>
 <p>After the write syscall the program continues the flow and asks for our input again.</p>
 <p>The stack will look like this when we will give our second input.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode perl"><code class="sourceCode perl"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>        |----------------|</span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode "><code class="sourceCode "><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>        |----------------|</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        |      esp       |</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        |----------------|</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        |                |</span>
