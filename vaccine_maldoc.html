@@ -3,8 +3,8 @@
 	<meta charset="UTF-8">
 	<meta name="description" content="quackland.tk - under construction">
 	<meta name="author" content="quackland.tk">
-	<link rel="stylesheet" href="/styles/dracula.css">
-	<script src="/js/highlight.pack.js"></script>
+	<link rel="stylesheet" href="styles/dracula.css">
+	<script src="js/highlight.pack.js"></script>
 	<script>hljs.highlightAll();</script>
 	<title>quackland.kr</title>
 
@@ -16,6 +16,22 @@
 			padding-left: 137px;
 			padding-right: 137px;
 		}
+
+		figure {
+			text-align: center;
+		}
+		figure img {
+			vertical-align: center;
+		}
+		figure figcaption {
+			text-align: center;
+		}
+		figcaption {
+			font-size: 10px;
+			color:#81cc4b;
+			text-align: center;
+		}
+
 		h1 {
 			font-size: 40px;
 			color:#81cc4b;
@@ -44,9 +60,15 @@
 </head>
 <body>
 <h1 id="vaccine-internet-survey-malspam">Vaccine Internet Survey Malspam</h1>
-<p>####Date: 24.5.2021 #### Problem Name &amp; ID: Vaccine Internet Survey Malspam #### Severity: Medium to high</p>
+<h4>Date: 24.5.2021</h4>
+<h4>ID: Vaccine Internet Survey Malspam</h4>
+<h4>Severity: Medium to high</h4>
 <h1 id="executive-summary">Executive Summary</h1>
-<p>The ICEDID malware, first appeared in cyberspace as banking trojan[1] in 2017 has now evolved into a infamous point of entry for threat actors motivated to target financial institutions for credential theft[2] and data exfiltration[3]. During the earlier phase of ICEDID, it was deployed to primarily target banking credentials, credit card info etc. In the year of 2020 it was observed that ICEDID had evolved and was now able to perform common post-exploitation[4] techniques and provide access to the threat actor and ultimately become severe ransomware. The main use of malware had now diverted towards post-exploitation techniques rather than credentials theft and data exfiltration. # Description ICEDID is propagated via malspam emails that usually contain Office file attachments. These files are created with the use of microsoft macros. Macros are a feature of Microsoft office suite that can allow run commands or make changes to the system. Thus employing this technique the ICEDID malware fetches and runs the malicious payload. In February 2020 campaigns, maldocs were spread via spam and first dropped a malware called OStap malware[5] which later in turn dropped the ICEDID malware. The ICEDID malware seems to have a connection with the Emotet gang. The spread of ICEDID maldoc via spam has been consistent since it emerged. It has a main focus on the financial sector e-commerce and social media platforms. The ICEDID malware targets business users and business banking services. The ICEDID malware that arose in 2021 was veiled as COVID Vaccine Survey and incited clients to empower macros to “decrypt” the record. This phishing[6] style of the malware isn’t something however camouflaging as COVID Vaccine Survey is another received method. Once the macros are enabled the malware downloads the malicious payload and runs it on the system. This malicious payload allows threat actors to steal information from the system. The domain on which the command and control server[7] was hosted on was registered on 22nd March of 2021 thus this wave malspam must have started after then and observing the ip patterns and style of attack used in malware campaigns, the malware must have originated in Russia or Eastern Europe. The threat actors behind the campaign are likely to conduct these kinds of attacks in future. Thus deploying suitable measures and defences can stop you from being low hanging fruits for threat actors.</p>
+<p>The ICEDID malware, first appeared in cyberspace as banking trojan in 2017 has now evolved into a infamous point of entry for threat actors motivated to target financial institutions for credential theft and data exfiltration. During the earlier phase of ICEDID, it was deployed to primarily target banking credentials, credit card info etc. In the year of 2020 it was observed that ICEDID had evolved and was now able to perform common post-exploitation techniques and provide access to the threat actor and ultimately become severe ransomware. The main use of malware had now diverted towards post-exploitation techniques rather than credentials theft and data exfiltration.</p>
+<h1>Description</h1> 
+<p>ICEDID is propagated via malspam emails that usually contain Office file attachments. These files are created with the use of microsoft macros. Macros are a feature of Microsoft office suite that can allow run commands or make changes to the system. Thus employing this technique the ICEDID malware fetches and runs the malicious payload. In February 2020 campaigns, maldocs were spread via spam and first dropped a malware called OStap malware which later in turn dropped the ICEDID malware.<p>
+<p>The ICEDID malware seems to have a connection with the Emotet gang. The spread of ICEDID maldoc via spam has been consistent since it emerged. It has a main focus on the financial sector e-commerce and social media platforms. The ICEDID malware targets business users and business banking services.</p>
+<p>ICEDID malware that arose in 2021 was veiled as COVID Vaccine Survey and incited clients to empower macros to “decrypt” the record. This phishing style of the malware isn’t something however camouflaging as COVID Vaccine Survey is another received method. Once the macros are enabled the malware downloads the malicious payload and runs it on the system. This malicious payload allows threat actors to steal information from the system. The domain on which the command and control server was hosted on was registered on 22nd March of 2021 thus this wave malspam must have started after then and observing the ip patterns and style of attack used in malware campaigns, the malware must have originated in Russia or Eastern Europe. The threat actors behind the campaign are likely to conduct these kinds of attacks in future. Thus deploying suitable measures and defences can stop you from being low hanging fruits for threat actors.</p>
 <h1 id="detailed-static-analysis">Detailed Static Analysis</h1>
 <h2 id="analysis-of-contract_1720581471.xlsm">Analysis of Contract_1720581471.xlsm</h2>
 <h3 id="file-identification">File identification</h3>
@@ -69,7 +91,7 @@
 <figure>
 <img src="images/vacine_maldoc_preview.png" alt="The preview of the xlsx file" /><figcaption aria-hidden="true">The preview of the xlsx file</figcaption>
 </figure>
-<p>The malware is macro based that uses rundll32.exe to load a malicious dll[8] into the machine and then run a function called DllRegisterServer.</p>
+<p>The malware is macro based that uses rundll32.exe to load a malicious dll into the machine and then run a function called DllRegisterServer.</p>
 <pre><code>    &lt;row r=&quot;6&quot; spans=&quot;5:5&quot; x14ac:dyDescent=&quot;0.3&quot;&gt;
         &lt;c r=&quot;E6&quot; s=&quot;1&quot; t=&quot;b&quot;&gt;
         &lt;f&gt;EXEC(&quot;rundll32 &quot;&amp;&quot;..\Hodas.vyur1&quot;&amp;&quot;,DllRegisterServer&quot;)&lt;/f&gt;
@@ -141,7 +163,10 @@
 <p>By the time we got a malware sample the ip’s hosting the malicious dll were already down. But since we know this malware belongs to the iceID family and does mostly the same thing as his other siblings, we can take a look at the dll with the same name found here.</p>
 <p>https://bazaar.abuse.ch/sample/0bfbe59ac91d909de8ef5d3899409bf34dc7636972a6e65154cab44c85a8adee/</p>
 <p>Looking at the virtual size and raw size shows us that the dll was not packed.</p>
-<p><img src="images/vacine_maldoc_sections.png" alt="Size table of dll in CFF explorer" /> Exported Functions The excel macro was running the DllRegisterServer function from the dll. On analyzing it is found the dll contains one more export function called “PluginInit” that could have been used.</p>
+<figure>
+	<img src="images/vacine_maldoc_sections.png" alt="Size table of dll in CFF explorer" /><figcaption>Sections in DLL</figcaption>
+</figure>
+<p>Exported Functions The excel macro was running the DllRegisterServer function from the dll. On analyzing it is found the dll contains one more export function called “PluginInit” that could have been used.</p>
 <p>The malware seems to be written by a competent author as it has few tricks that make it hard to analyze and the encoding scheme used by the malware causes much trouble when reversing.</p>
 <h4 id="exported-functions">Exported Functions</h4>
 <figure>
@@ -161,7 +186,7 @@ standard query response 0x53e4 no such name a stoikoplot.xyz soa ns0.centralnic.
 <p>Dns requests captured for domain in wireshark</p>
 <p>Once the IP is resolved, a request to the stoikoplot.xyz is made to verify the existence of the c2 framework. The dll follows a complex encryption scheme for all its strings and uses the method of dynamic allocation to load and call various dll during runtime.</p>
 <figure>
-<img src="images/vacine_maldoc_asm_code.png" alt="Asm code for Allocating and Writing to process" /><figcaption aria-hidden="true">Asm code for Allocating and Writing to process</figcaption>
+<img src="images/vacine_maldoc_asm_code.png" alt="Asm code for Allocating and Writing to process" /><figcaption aria-hidden="true"></figcaption>
 </figure>
 <p>The purpose of dll is to collect data from the host, encrypt it and send it over the http protocol to the c2 server hosted at the stoikoplot.xyz domain. Thus if you notice huge amounts of http traffic being generated towards an aws host, it is very likely that you have been infiltrated.</p>
 <p>Command And Control Server Information</p>
@@ -175,7 +200,8 @@ Registry Expiration: 2022-03-22 23:59:59 UTC
 Updated: 2021-04-05 21:58:35 UTC
 Created: 2021-03-22 15:56:27 UTC</code></pre>
 <p>The domain on which the command and control was hosted on was registered on 22nd March of 2021 thus this wave malspam must have started after then and observing the ip patterns and style of attack used in malware campaigns, the malware must have origin in Russia or Eastern Europe. The threat actors behind the campaign are likely to conduct these kinds of attacks in future. Thus deploying suitable measures and defences can stop you from being low hanging fruits for threat actors. Mitigation Strategy and techniques This attack was based entirely on the phishing vector and social engineering. Thus As per recommendation and mitigation: Specific Recommendations</p>
-<p>Use The Following Yara[9] Rule For Malicious Excel Document Detection</p>
+
+<h3>Use The Following Yara Rule For Malicious Excel Document Detection</h3>
 <pre><code>import &quot;hash&quot;
 rule covid_vaccine_malspam {
     meta:
@@ -197,10 +223,8 @@ rule covid_vaccine_malspam {
 hash.sha256(0,filesize)== &quot;71d51851078cd16a46ed93fa6fb95a5fbb15514560d3698c727ccf027d141274&quot;
 }</code></pre>
 <h1 id="references">References</h1>
-<ol type="1">
+<ol>
 <li>http://www.anvari.org/fortune/Miscellaneous_Collections/291162_trojan-horse-coined-by-mit-hacker-turned-nsa-spook-dan-edwards-n.html</li>
-</ol>
-<ul>
 <li>https://searchsecurity.techtarget.com/definition/credential-theft</li>
 <li>https://en.wikipedia.org/wiki/Data_exfiltration</li>
 <li>https://www.offensive-security.com/metasploit-unleashed/msf-post-exploitation/</li>
@@ -217,5 +241,5 @@ hash.sha256(0,filesize)== &quot;71d51851078cd16a46ed93fa6fb95a5fbb15514560d3698c
 <li>https://www.virustotal.com/gui/file/71e76bc250307330ae3c7f6a3dab344304f4a1fe8e4d91097ebbe4de5523a295/relations</li>
 <li>https://www.virustotal.com/gui/file/71d51851078cd16a46ed93fa6fb95a5fbb15514560d3698c727ccf027d141274/details</li>
 <li>https://bazaar.abuse.ch/sample/0bfbe59ac91d909de8ef5d3899409bf34dc7636972a6e65154cab44c85a8adee/</li>
-</ul></body>
+</ol></body>
 </html>

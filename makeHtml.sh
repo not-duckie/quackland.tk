@@ -7,8 +7,8 @@ text='<html>
 	<meta charset="UTF-8">
 	<meta name="description" content="quackland.tk - under construction">
 	<meta name="author" content="quackland.tk">
-	<link rel="stylesheet" href="/styles/dracula.css">
-	<script src="/js/highlight.pack.js"></script>
+	<link rel="stylesheet" href="styles/dracula.css">
+	<script src="js/highlight.pack.js"></script>
 	<script>hljs.highlightAll();</script>
 	<title>quackland.kr</title>
 
@@ -20,6 +20,22 @@ text='<html>
 			padding-left: 137px;
 			padding-right: 137px;
 		}
+
+		figure {
+			text-align: center;
+		}
+		figure img {
+			vertical-align: center;
+		}
+		figure figcaption {
+			text-align: center;
+		}
+		figcaption {
+			font-size: 10px;
+			color:#81cc4b;
+			text-align: center;
+		}
+
 		h1 {
 			font-size: 40px;
 			color:#81cc4b;
@@ -30,20 +46,6 @@ text='<html>
 			color:#81cc4b;
 		}
 		a { color: white; }
-		.hello {
-			position: fixed;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-		}
-		.fading {
-			animation:fading 7s infinite
-		}
-		@keyframes fading{
-			0%{opacity:0}
-			50%{opacity:1}
-			100%{opacity:0}
-		}
 	</style>
 </head>
 <body>
@@ -55,4 +57,3 @@ textend="</body>
 echo -n "$text$(cat $1.html)" > $1.html
 echo -n "$textend" >> $1.html
 #sed 's/sourceCode\ //g' $1.html > $1.html
-rm $1.md
