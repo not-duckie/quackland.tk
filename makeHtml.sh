@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#pandoc -o "$1.html" "$1.md"
+pandoc -o "$1.html" "$1.md"
 
 text='<html>
 	<head>
