@@ -1,0 +1,37 @@
+body {
+	background-color:black;
+	color:white;
+	font-family:hack;
+	padding-left: 137px;
+	padding-right: 137px;
+}
+table, th, td {
+	border: 0.01px solid white;
+	border-collapse: collapse;
+}
+figure {
+	text-align: center;
+}
+figure img {
+	vertical-align: center;
+}
+figure figcaption {
+	text-align: center;
+}
+figcaption {
+	font-size: 10px;
+	color:#81cc4b;
+	text-align: center;
+}
+
+h1 {
+	font-size: 40px;
+	color:#81cc4b;
+	text-align: center;
+}
+h2 {
+	font-size: 30px;
+	color:#81cc4b;
+}
+a { color: white; }
+
