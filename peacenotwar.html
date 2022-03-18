@@ -172,6 +172,7 @@
 <span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
 <span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
 <p>The malware is basically a bad written version of data wipe or ransomware attack. The code what an amateur hacker would write in intro pentest class.</p>
+<p>The malware tries to traverse the entire filesystem. Thus with proper ACL structure the impact of this attack can be reduced. Never the less supply chain attack such as these should be penalized</p>
 <h2 id="yara-rule">Yara Rule</h2>
 <div class="sourceCode" id="cb5"><pre class="sourceCode s"><code class="sourceCode gnuassembler"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rule peacenotwar_malware <span class="op">{</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">meta:</span></span>
